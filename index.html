@@ -200,23 +200,18 @@
         const ans = data.answers || {};
         const comment = data.comment || "";
 
-       // 回答もコメントも空なら表示しない
-      if (!ans.date1 && !comment) return;
+        // 回答もコメントも空なら表示しない
+        if (!ans.date1 && !comment) return;
 
-      const isMaru = ans.date1 === "〇";
-      if (isMaru) {
-        maruCount++;  // 「〇」を選んだユーザー数をカウント
-      }
-        
-        // 「〇」を選んだユーザーが3人以上の場合のみhighlightクラスを適用
-      let maruClass = "";
-      if (maruCount >= 3 ) {
-        if(isMaru && highlighted < 3)
-        maruClass = "highlight";  // 3人以上の「〇」選択者に対してのみ強調表示
-        highlighted++;
-      }
+        const isMaru = ans.date1 === "〇";
+        let maruClass = "";
 
-      countMaru++;  // 参加者の数をカウント
+        if (isMaru && highlighted < 3) {
+          maruClass = "highlight";
+          highlighted++;
+        }
+
+        if (isMaru) countMaru++;
 
         const row = `
           <tr>
@@ -355,9 +350,35 @@
 
 
 
+現行
+＊満員になったら表示されるようにしました。
+＊現在対応してるのは一つの日程のみです。
+＊アカウント登録しただけでは回答者一覧に表示されないよう修正しました。
+＊赤文字上に持ってくとこまでやりました。
+＊スマホサイズに対応しました。（PCのしゅっとした感じは消えました。まぁいいや）
+PC版（最初期）はheadを消去して、
+.container{
+max-width:700px;
+margin: auto;
+background: white;
+padding:20px;
+border-radius:10px;
+box-shadow: 0 0 10px #aaa;
+margin-bottom:30px;}
+
+table{
+width: 100%;
+border-collapse:collapse;
+margin-top:10px;}
+
+でした。備忘録。
+*赤背景まで対応しました。
+*最終更新時間を記録し、更新順になるように名簿を対応させました。
+＊リロードやコメントの変更だけでは順序が変わらないよう調整し、〇△×に変更があった場合のみ待機列を後ろに移動させる仕様としました。
 
 
-test
 
 
+今後実装したい仕様
+＊複数日に対応
 ＊満員になるまでは〇の人も赤表示にはしない。
