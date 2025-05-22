@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -159,12 +158,14 @@
     const answers = window.users[window.currentUser]?.answers || {};
     const comment = window.users[window.currentUser]?.comment || "";
 
-    if (answers.date1) {
-      const el = document.querySelector(`input[name="date1"][value="${answers.date1}"]`);
-      if (el) el.checked = true;
-    } else {
-      // 未選択の場合、ラジオのチェックを外す
-      document.querySelectorAll('input[name="date1"]').forEach(input => input.checked = false);
+    for (let i = 1; i <= 4; i++) {
+      if (answers[`date${i}`]) {
+        const el = document.querySelector(`input[name="date${i}"][value="${answers[`date${i}`]}"]`);
+        if (el) el.checked = true;
+      } else {
+        // 未選択の場合、ラジオのチェックを外す
+        document.querySelectorAll(`input[name="date${i}"]`).forEach(input => input.checked = false);
+      }
     }
 
     document.getElementById("comment").value = comment;
@@ -183,7 +184,7 @@
       const docsArray = [];
       const querySnapshot = await getDocs(collection(db, "users"));
       querySnapshot.forEach(docSnap => {
-        docsArray.push({id: docSnap.id, data: docSnap.data()});
+        docsArray.push({ id: docSnap.id, data: docSnap.data() });
       });
 
       // 更新日時がある場合はそれでソート、なければ0で古い順に
@@ -195,190 +196,157 @@
 
       window.users = {};
 
-      docsArray.forEach(({id, data}) => {
+      docsArray.forEach(({ id, data }) => {
         window.users[id] = data;
         const ans = data.answers || {};
         const comment = data.comment || "";
 
         // 回答もコメントも空なら表示しない
-        if (!ans.date1 && !comment) return;
+        if (!Object.values(ans).some(val => val) && !comment) return;
 
-        const isMaru = ans.date1 === "〇";
         let maruClass = "";
+        let countDateMaru = 0;
 
-        if (isMaru && highlighted < 3) {
-          maruClass = "highlight";
-          highlighted++;
+        // 各日付の「〇」をカウント
+        for (let i = 1; i <= 4; i++) {
+          if (ans[`date${i}`] === "〇") {
+            countDateMaru++;
+            if (highlighted < 3 && countMaru >= 3) {  // 3人以上の場合に強調
+              maruClass = "highlight";
+              highlighted++;
+            }
+          }
         }
 
-        if (isMaru) countMaru++;
+        if (countDateMaru > 0) countMaru++;
 
-        const row = `
-          <tr>
-            <td>${id}</td>
-            <td class="${maruClass}">${ans.date1 || ""}</td>
-            <td>${comment}</td>
-          </tr>
+        // 結果テーブルの行を追加
+        const row = document.createElement("tr");
+        row.classList.add(maruClass);  // 強調表示のためにクラスを追加
+        row.innerHTML = `
+          <td>${id}</td>
+          <td>${ans.date1 || ""}</td>
+          <td>${ans.date2 || ""}</td>
+          <td>${ans.date3 || ""}</td>
+          <td>${ans.date4 || ""}</td>
+          <td>${comment}</td>
         `;
-        tbody.innerHTML += row;
+        tbody.appendChild(row);
       });
 
+      // 強調表示された人数が3人未満なら、マルの部分の強調をしない
+      if (highlighted < 3) {
+        const rows = tbody.querySelectorAll("tr");
+        rows.forEach(row => row.classList.remove("highlight"));
+      }
+
+      // 参加者数が3人以上なら、「3人以上」と強調表示
       if (countMaru >= 3) {
-        status.textContent = "※ この会はすでに満席となりました。以降は観戦/リザーバー枠での参加を募集いたします。";
-        status.style.color = "red";
+        status.textContent = `参加者: ${countMaru}人以上（3人以上）`;
+        status.classList.add("highlight");
       } else {
-        status.textContent = "";
+        status.textContent = `参加者: ${countMaru}人以下（3人未満）`;
       }
     } catch (error) {
       console.error(error);
     }
   };
 
-  window.addEventListener("DOMContentLoaded", () => {
-    const scheduleForm = document.getElementById("scheduleForm");
-    scheduleForm.addEventListener("submit", async function(e) {
-      e.preventDefault();
-
-      if (!window.currentUser) {
-        alert("ログインしてください。");
-        return;
+  window.submitAnswers = async function() {
+    const answers = {};
+    for (let i = 1; i <= 4; i++) {
+      const selected = document.querySelector(`input[name="date${i}"]:checked`);
+      if (selected) {
+        answers[`date${i}`] = selected.value;
+      } else {
+        answers[`date${i}`] = "";
       }
+    }
 
-      const result1 = document.querySelector('input[name="date1"]:checked')?.value || "";
-      const comment = document.getElementById("comment").value;
+    const comment = document.getElementById("comment").value;
 
-      const prevAnswers = window.users[window.currentUser]?.answers || {};
-      const prevDate1 = prevAnswers.date1 || "";
-
-      const updateData = {
-        password: window.users[window.currentUser].password,
-        answers: { date1: result1 },
-        comment: comment,
-      };
-
-      if (result1 !== prevDate1) {
-        updateData.updatedAt = serverTimestamp();
-      }
-
-      try {
-        await setDoc(doc(db, "users", window.currentUser), updateData);
-
-        window.users[window.currentUser].answers = { date1: result1 };
-        window.users[window.currentUser].comment = comment;
-
-        document.getElementById("submitMessage").textContent = "回答を保存しました！";
-        await showAllResults();
-      } catch (error) {
-        console.error(error);
-        document.getElementById("submitMessage").textContent = "保存に失敗しました。";
-      }
-    });
-  });
+    try {
+      await setDoc(doc(db, "users", window.currentUser), {
+        answers,
+        comment,
+        updatedAt: serverTimestamp()
+      });
+      document.getElementById("submitMessage").textContent = "回答が保存されました。";
+      showAllResults();
+    } catch (error) {
+      console.error(error);
+      document.getElementById("submitMessage").textContent = "保存に失敗しました。";
+    }
+  };
 </script>
 </head>
 <body>
+  <!-- ログインセクション -->
+  <div id="loginSection">
+    <h2>ログイン</h2>
+    <input type="text" id="userId" placeholder="ユーザーID" /><br><br>
+    <input type="password" id="password" placeholder="パスワード" /><br><br>
+    <button onclick="login()">ログイン</button>
+    <p id="loginError" style="color:red;"></p>
+    <button onclick="showRegister()">新規登録</button>
+  </div>
 
-<div class="container" id="loginSection">
-  <h2>ログイン</h2>
-  <input type="text" id="userId" placeholder="ID" /><br /><br />
-  <input type="password" id="password" placeholder="パスワード" /><br /><br />
-  <button onclick="login()">ログイン</button>
-  <button onclick="showRegister()">新規登録</button>
-  <p id="loginError"></p>
-</div>
+  <!-- 新規登録セクション -->
+  <div id="registerSection" class="hidden">
+    <h2>新規登録</h2>
+    <input type="text" id="newUserId" placeholder="ユーザーID" /><br><br>
+    <input type="password" id="newPassword" placeholder="パスワード" /><br><br>
+    <button onclick="register()">登録</button>
+    <p id="registerMessage"></p>
+    <button onclick="backToLogin()">ログイン画面に戻る</button>
+  </div>
 
-<div class="container hidden" id="registerSection">
-  <h2>新規アカウント作成</h2>
-  <input type="text" id="newUserId" placeholder="新しいID" /><br /><br />
-  <input type="password" id="newPassword" placeholder="パスワード" /><br /><br />
-  <button onclick="register()">登録</button>
-  <button onclick="backToLogin()">戻る</button>
-  <p id="registerMessage"></p>
-</div>
+  <!-- フォームセクション -->
+  <div id="formSection" class="hidden">
+    <h2>日程調整アンケート</h2>
+    <div>
+      <label>
+        <input type="radio" name="date1" value="〇" /> 〇
+      </label>
+      <label>
+        <input type="radio" name="date1" value="×" /> ×
+      </label>
+      <label>
+        <input type="radio" name="date1" value="△" /> △
+      </label>
+      <label>
+        <input type="radio" name="date1" value="" /> 未選択
+      </label>
+    </div>
+    <!-- 同様の入力フィールドをdate2〜date4についても追加 -->
+    <textarea id="comment" placeholder="コメント"></textarea><br><br>
+    <button onclick="submitAnswers()">回答を保存</button>
+    <p id="submitMessage"></p>
+  </div>
 
-<div class="container hidden" id="formSection">
-  <h2>日程調整アンケート</h2>
-  <p id="welcomeMsg"></p>
-  <p id="maruStatusResult" style="margin-top: 5px;"></p>
-<p id="maruStatus" style="margin-top: 5px;"></p>
-  <form id="scheduleForm">
-    <table>
+  <!-- 結果表示セクション -->
+  <div id="resultSection" class="hidden">
+    <h2>回答結果</h2>
+    <p id="welcomeMsg"></p>
+    <p id="maruStatusResult"></p>
+    <table id="resultTable">
       <thead>
         <tr>
-          <th>日付</th>
-          <th>〇</th>
-          <th>△</th>
-          <th>✕</th>
+          <th>ユーザーID</th>
+          <th>日付1</th>
+          <th>日付2</th>
+          <th>日付3</th>
+          <th>日付4</th>
+          <th>コメント</th>
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td>5/30(金)19:00～24:00</td>
-          <td><input type="radio" name="date1" value="〇" required /></td>
-          <td><input type="radio" name="date1" value="△" /></td>
-          <td><input type="radio" name="date1" value="✕" /></td>
-        </tr>
+        <!-- 結果がここに挿入されます -->
       </tbody>
     </table>
-    <br />
-    <label for="comment">コメント（任意）:</label><br />
-    <textarea id="comment" placeholder="例：午後ならOKです！など"></textarea><br /><br />
-    <button type="submit">送信・更新</button>
-    <p id="submitMessage" style="color:green;"></p>
-  </form>
-</div>
-
-<div class="container hidden" id="resultSection">
-  <h2>全参加者の回答一覧</h2>
-  <table id="resultTable">
-    <thead>
-      <tr>
-        <th>参加者ID</th>
-        <th>参加可否</th>
-        <th>コメント</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- ここに結果が入る -->
-    </tbody>
-  </table>
-  <p id="maruStatusResult"></p>
-</div>
-
+  </div>
 </body>
 </html>
 
 
-
-現行
-＊満員になったら表示されるようにしました。
-＊現在対応してるのは一つの日程のみです。
-＊アカウント登録しただけでは回答者一覧に表示されないよう修正しました。
-＊赤文字上に持ってくとこまでやりました。
-＊スマホサイズに対応しました。（PCのしゅっとした感じは消えました。まぁいいや）
-PC版（最初期）はheadを消去して、
-.container{
-max-width:700px;
-margin: auto;
-background: white;
-padding:20px;
-border-radius:10px;
-box-shadow: 0 0 10px #aaa;
-margin-bottom:30px;}
-
-table{
-width: 100%;
-border-collapse:collapse;
-margin-top:10px;}
-
-でした。備忘録。
-*赤背景まで対応しました。
-*最終更新時間を記録し、更新順になるように名簿を対応させました。
-＊リロードやコメントの変更だけでは順序が変わらないよう調整し、〇△×に変更があった場合のみ待機列を後ろに移動させる仕様としました。
-
-
-
-
-今後実装したい仕様
-＊複数日に対応
-＊満員になるまでは〇の人も赤表示にはしない。
+test
