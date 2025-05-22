@@ -208,10 +208,13 @@
         let maruClass = "";
 
        if (isMaru) {
-  if (countMaru < 3) {  // 〇をつけた人が3人未満なら
-    highlightCount++;    // highlightCountをインクリメント
-    if (highlightCount <= 3) {
-      maruClass = "highlight";  // highlightを付ける
+  // 〇をつけた人数が3人未満なら highlight をつけない
+  if (countMaru >= 3) {
+    if (highlightCount < 3) {  // 最初の3人にのみ highlight をつける
+      highlightCount++;    // highlightCountをインクリメント
+      if (highlightCount <= 3) {
+        maruClass = "highlight";  // 3人目までに highlight をつける
+      }
     }
   }
 }
@@ -353,7 +356,6 @@ if (isMaru) countMaru++;
 </body>
 </html>
 
-ｌｌｌｌｌ
-
+ううううううう
 
 
