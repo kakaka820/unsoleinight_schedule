@@ -207,21 +207,22 @@
         let maruClass = "";
 
         if (isMaru && countMaru >= 3 && highlighted < 3) {
-          maruClass = "highlight";
-          highlighted++;
-        }
+    maruClass = "highlight";  // 強調表示
+    highlighted++;  // 強調表示した人数をカウント
+  }
 
-        if (isMaru) countMaru++;
+  if (isMaru) countMaru++;
 
-        const row = `
-          <tr>
-            <td>${id}</td>
-            <td class="${maruClass}">${ans.date1 || ""}</td>
-            <td>${comment}</td>
-          </tr>
-        `;
-        tbody.innerHTML += row;
-      });
+  const row = `
+    <tr>
+      <td>${id}</td>
+      <td class="${maruClass}">${ans.date1 || ""}</td>
+      <td>${comment}</td>
+    </tr>
+  `;
+  tbody.innerHTML += row;
+});
+       
 
       if (countMaru >= 3) {
         status.textContent = "※ この会はすでに満席となりました。以降は観戦/リザーバー枠での参加を募集いたします。";
@@ -350,4 +351,4 @@
 
 
 
-テスト
+あ
