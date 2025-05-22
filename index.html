@@ -2,9 +2,12 @@
 <html lang="ja">
 <head>
 <script type="module">
+  // Firebase SDK のimport
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
   import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
+  // Firebase設定（あなたのものを使ってね）
   const firebaseConfig = {
     apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
     authDomain: "unsoleinight-schedule.firebaseapp.com",
@@ -14,212 +17,175 @@
     appId: "1:1040333692698:web:fb0e4f481dff8167f756a3"
   };
 
+  // Firebase初期化
   const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+  const auth = getAuth();
+  const db = getFirestore();
+  const provider = new GoogleAuthProvider();
 
-  window.users = {};       // 全ユーザー情報を格納（画面更新ごとに上書き）
-  window.currentUser = ""; // 現在ログイン中のユーザーID
+  // グローバル変数（ログインユーザーのUID）
+  let currentUserUid = null;
 
-  // ログイン関数
-  window.login = async function() {
-    const id = document.getElementById("userId").value;
-    const pass = document.getElementById("password").value;
-
-    try {
-      const docSnap = await getDoc(doc(db, "users", id));
-      if (docSnap.exists()) {
-        const userData = docSnap.data();
-        if (userData.password === pass) {
-          window.currentUser = id;
-          window.users[id] = userData;
-          document.getElementById("loginSection").classList.add("hidden");
-          document.getElementById("formSection").classList.remove("hidden");
-          document.getElementById("resultSection").classList.remove("hidden");
-          document.getElementById("welcomeMsg").textContent = `${id} さんとしてログイン中`;
-          loadPreviousAnswers();
-          await showAllResults();
-          document.getElementById("loginError").textContent = "";
-        } else {
-          document.getElementById("loginError").textContent = "パスワードが違います。";
-        }
-      } else {
-        document.getElementById("loginError").textContent = "IDが存在しません。";
-      }
-    } catch (error) {
-      console.error(error);
-      document.getElementById("loginError").textContent = "ログイン中にエラーが発生しました。";
-    }
-  };
-
-  // 新規登録関数
-  window.register = async function() {
-    const newId = document.getElementById("newUserId").value;
-    const newPass = document.getElementById("newPassword").value;
-
-    if (!newId || !newPass) {
-      document.getElementById("registerMessage").style.color = "red";
-      document.getElementById("registerMessage").textContent = "IDとパスワードを入力してください。";
-      return;
-    }
-
-    try {
-      const docSnap = await getDoc(doc(db, "users", newId));
-      if (docSnap.exists()) {
-        document.getElementById("registerMessage").style.color = "red";
-        document.getElementById("registerMessage").textContent = "このIDはすでに使われています。";
-      } else {
-        await setDoc(doc(db, "users", newId), {
-          password: newPass,
-          answers: {},
-          comment: ""
-        });
-        document.getElementById("registerMessage").style.color = "green";
-        document.getElementById("registerMessage").textContent = "登録成功！ログイン画面に戻ってください。";
-      }
-    } catch (error) {
-      console.error(error);
-      document.getElementById("registerMessage").style.color = "red";
-      document.getElementById("registerMessage").textContent = "登録に失敗しました。";
-    }
-  };
-
-  window.showRegister = function() {
-    document.getElementById("loginSection").classList.add("hidden");
-    document.getElementById("registerSection").classList.remove("hidden");
-  };
-
-  window.backToLogin = function() {
-    document.getElementById("registerSection").classList.add("hidden");
-    document.getElementById("loginSection").classList.remove("hidden");
-    document.getElementById("registerMessage").textContent = "";
-  };
-
-  // 以前の回答をフォームにセット
-  window.loadPreviousAnswers = function() {
-    const answers = window.users[window.currentUser].answers || {};
-    const comment = window.users[window.currentUser].comment || "";
-
-    if (answers.date1) {
-      const el = document.querySelector(`input[name="date1"][value="${answers.date1}"]`);
-      if(el) el.checked = true;
-    }
-    // date2, date3あればここに同様にセット
-
-    document.getElementById("comment").value = comment;
-  };
-
-  // フォーム送信（Firestoreに保存）
-  document.getElementById("scheduleForm").addEventListener("submit", async function(e) {
-    e.preventDefault();
-    const result1 = document.querySelector('input[name="date1"]:checked').value;
-    const comment = document.getElementById("comment").value;
-
-    try {
-      await setDoc(doc(db, "users", window.currentUser), {
-        password: window.users[window.currentUser].password,
-        answers: { date1: result1 },
-        comment: comment
+  // Googleログイン関数
+  window.googleLogin = () => {
+    signInWithPopup(auth, provider)
+      .then((result) => {
+        currentUserUid = result.user.uid;
+        document.getElementById("welcomeMsg").textContent = `${result.user.displayName} さんとしてログイン中`;
+        toggleSections(true);
+        loadPreviousAnswers();
+        showAllResults();
+      })
+      .catch((error) => {
+        alert("ログインエラー：" + error.message);
       });
-      // Firestoreに保存後、usersを更新しておく
-      window.users[window.currentUser].answers = { date1: result1 };
-      window.users[window.currentUser].comment = comment;
+  };
 
-      document.getElementById("submitMessage").textContent = "回答をFirestoreに保存しました！";
-      await showAllResults();
-    } catch (error) {
-      console.error(error);
-      document.getElementById("submitMessage").textContent = "保存に失敗しました。";
+  // ログアウト関数
+  window.logout = () => {
+    signOut(auth).then(() => {
+      location.reload();
+    });
+  };
+
+  // ログイン状態監視
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUserUid = user.uid;
+      document.getElementById("welcomeMsg").textContent = `${user.displayName} さんとしてログイン中`;
+      toggleSections(true);
+      loadPreviousAnswers();
+      showAllResults();
+    } else {
+      toggleSections(false);
     }
   });
 
-  // 全ユーザーの回答一覧表示
+  // セクション表示切替（ログイン済みならフォーム・結果表示、未ログインならログイン画面）
+  function toggleSections(loggedIn) {
+    if(loggedIn){
+      document.getElementById("loginSection").classList.add("hidden");
+      document.getElementById("formSection").classList.remove("hidden");
+      document.getElementById("resultSection").classList.remove("hidden");
+    } else {
+      document.getElementById("loginSection").classList.remove("hidden");
+      document.getElementById("formSection").classList.add("hidden");
+      document.getElementById("resultSection").classList.add("hidden");
+      document.getElementById("welcomeMsg").textContent = "";
+    }
+  }
+
+  // Firestoreからログインユーザーの以前の回答を取得してフォームに反映
+  async function loadPreviousAnswers() {
+    if (!currentUserUid) return;
+    const docRef = doc(db, "schedules", currentUserUid);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      if(data.answers && data.answers.date1){
+        document.querySelector(`input[name="date1"][value="${data.answers.date1}"]`).checked = true;
+      }
+      document.getElementById("comment").value = data.comment || "";
+    }
+  }
+
+  // Firestoreに回答を保存
+  async function saveAnswers(answers, comment) {
+    if (!currentUserUid) return;
+    const docRef = doc(db, "schedules", currentUserUid);
+    await setDoc(docRef, { answers, comment });
+  }
+
+  // 全ユーザーの回答をFirestoreから取得してテーブル表示
   async function showAllResults() {
     const tbody = document.getElementById("resultTable").querySelector("tbody");
     tbody.innerHTML = "";
-
-    try {
-      const querySnapshot = await getDocs(collection(db, "users"));
-      window.users = {}; // 最新の全ユーザーデータで上書き
-      querySnapshot.forEach((docSnap) => {
-        const id = docSnap.id;
-        const data = docSnap.data();
-        window.users[id] = data;
-        const ans = data.answers || {};
-        const comment = data.comment || "";
-        const row = `
-          <tr>
-            <td>${id}</td>
-            <td>${ans.date1 || "-"}</td>
-            <td>${comment}</td>
-          </tr>
-        `;
-        tbody.innerHTML += row;
-      });
-    } catch (error) {
-      console.error(error);
-    }
+    const querySnapshot = await getDocs(collection(db, "schedules"));
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      const answers = data.answers || {};
+      const comment = data.comment || "";
+      // ユーザーIDはdoc.id
+      const row = `
+        <tr>
+          <td>${doc.id}</td>
+          <td>${answers.date1 || "-"}</td>
+          <td>${comment}</td>
+        </tr>
+      `;
+      tbody.innerHTML += row;
+    });
   }
+
+  // フォームの送信処理
+  window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById("scheduleForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!currentUserUid) {
+        alert("ログインしてください！");
+        return;
+      }
+      const result1 = document.querySelector('input[name="date1"]:checked')?.value;
+      const comment = document.getElementById("comment").value;
+
+      if (!result1) {
+        alert("日程の選択をしてください！");
+        return;
+      }
+
+      await saveAnswers({ date1: result1 }, comment);
+      document.getElementById("submitMessage").textContent = "回答を保存しました！";
+      showAllResults();
+    });
+  });
+
 </script>
 
-<meta charset="UTF-8" />
-<title>日程調整アンケート</title>
-<style>
-  body {
-    font-family: sans-serif;
-    background-color: #f0f8ff;
-    padding: 20px;
-  }
-  .container {
-    max-width: 700px;
-    margin: auto;
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px #aaa;
-    margin-bottom: 30px;
-  }
-  .hidden {
-    display: none;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-  }
-  th, td {
-    border: 1px solid #ccc;
-    text-align: center;
-    padding: 8px;
-  }
-  th {
-    background-color: #e0f0ff;
-  }
-  textarea {
-    width: 100%;
-    height: 60px;
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>日程調整アンケート</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f0f8ff;
+      padding: 20px;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #aaa;
+      margin-bottom: 30px;
+    }
+    .hidden {
+      display: none;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      text-align: center;
+      padding: 8px;
+    }
+    th {
+      background-color: #e0f0ff;
+    }
+    textarea {
+      width: 100%;
+      height: 60px;
+    }
+  </style>
 </head>
 <body>
 
 <!-- ログイン画面 -->
 <div class="container" id="loginSection">
   <h2>ログイン</h2>
-  <input type="text" id="userId" placeholder="ID" /><br /><br />
-  <input type="password" id="password" placeholder="パスワード" /><br /><br />
-  <button onclick="login()">ログイン</button>
-  <button onclick="showRegister()">新規登録</button>
-  <p id="loginError" style="color:red;"></p>
-</div>
-
-<!-- 新規登録画面 -->
-<div class="container hidden" id="registerSection">
-  <h2>新規アカウント作成</h2>
-  <input type="text" id="newUserId" placeholder="新しいID" /><br /><br />
-  <input type="password" id="newPassword" placeholder="パスワード" /><br /><br />
-  <button onclick="register()">登録</button>
-  <button onclick="backToLogin()">戻る</button>
-  <p id="registerMessage" style="color:green;"></p>
+  <button onclick="googleLogin()">Googleでログイン</button>
 </div>
 
 <!-- アンケート画面 -->
@@ -239,18 +205,19 @@
       <tbody>
         <tr>
           <td>5/30(金)19:00～24:00</td>
-          <td><input type="radio" name="date1" value="〇" required /></td>
-          <td><input type="radio" name="date1" value="△" /></td>
-          <td><input type="radio" name="date1" value="✕" /></td>
+          <td><input type="radio" name="date1" value="〇" required></td>
+          <td><input type="radio" name="date1" value="△"></td>
+          <td><input type="radio" name="date1" value="✕"></td>
         </tr>
       </tbody>
     </table>
-    <br />
-    <label for="comment">コメント（任意）:</label><br />
-    <textarea id="comment" placeholder="例：午後ならOKです！など"></textarea><br /><br />
+    <br>
+    <label for="comment">コメント（任意）:</label><br>
+    <textarea id="comment" placeholder="例：午後ならOKです！など"></textarea><br><br>
     <button type="submit">送信・更新</button>
     <p id="submitMessage" style="color:green;"></p>
   </form>
+  <button onclick="logout()">ログアウト</button>
 </div>
 
 <!-- 全体の集計表示 -->
