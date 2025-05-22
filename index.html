@@ -172,11 +172,11 @@ if (result1 !== precDate1){
 updateData.updatedAt = serverTimestamp();}
 
     try {
-      await setDoc(doc(db, "users", window.currentUser), {
+      await setDoc(doc(db, "users", window.currentUser),updateData); {
         password: window.users[window.currentUser].password,
         answers: { date1: result1 },
         comment: comment,
-      });
+      };
 
 
       window.users[window.currentUser].answers = { date1: result1 };
@@ -319,4 +319,4 @@ const comment = data.comment || "";
 
 
 
-k\
+k
