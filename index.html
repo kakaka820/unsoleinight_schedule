@@ -1,3 +1,5 @@
+〇×△変えないとソート変わらない設定にしたい
+
 
 <!DOCTYPE html>
 <html lang="ja">
@@ -158,6 +160,17 @@
     const result1 = document.querySelector('input[name="date1"]:checked')?.value || "";
     const comment = document.getElementById("comment").value;
 
+const prevAnswers = window.users[window.currentUser].answers || {};
+const prevDare1 = prevAnswers.date1 || "";
+const updateData ={
+password: window.users[window.currentUser].password,
+answers: {date1,: result1}
+comment: comment
+};
+
+if (result 1 !== precDete1){
+updateData.updatedAt = serverTimestamp();}
+
     try {
       await setDoc(doc(db, "users", window.currentUser), {
         password: window.users[window.currentUser].password,
@@ -306,4 +319,5 @@ const comment = data.comment || "";
 
 
 
-soat
+
+sq
