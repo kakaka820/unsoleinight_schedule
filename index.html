@@ -1,6 +1,3 @@
-〇×△変えないとソート変わらない設定にしたい
-
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -45,6 +42,12 @@
   .highlight {
     background-color: #ffcccc;
   }
+  #submitMessage {
+    color: green;
+  }
+  #loginError, #registerMessage {
+    color: red;
+  }
 </style>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
@@ -66,8 +69,13 @@
   window.currentUser = "";
 
   window.login = async function() {
-    const id = document.getElementById("userId").value;
+    const id = document.getElementById("userId").value.trim();
     const pass = document.getElementById("password").value;
+
+    if (!id || !pass) {
+      document.getElementById("loginError").textContent = "IDとパスワードを入力してください。";
+      return;
+    }
 
     try {
       const docSnap = await getDoc(doc(db, "users", id));
@@ -83,6 +91,7 @@
           loadPreviousAnswers();
           await showAllResults();
           document.getElementById("loginError").textContent = "";
+          document.getElementById("submitMessage").textContent = "";
         } else {
           document.getElementById("loginError").textContent = "パスワードが違います。";
         }
@@ -96,7 +105,7 @@
   };
 
   window.register = async function() {
-    const newId = document.getElementById("newUserId").value;
+    const newId = document.getElementById("newUserId").value.trim();
     const newPass = document.getElementById("newPassword").value;
 
     if (!newId || !newPass) {
@@ -135,85 +144,61 @@
   window.showRegister = function() {
     document.getElementById("loginSection").classList.add("hidden");
     document.getElementById("registerSection").classList.remove("hidden");
+    document.getElementById("registerMessage").textContent = "";
   };
 
   window.backToLogin = function() {
     document.getElementById("registerSection").classList.add("hidden");
     document.getElementById("loginSection").classList.remove("hidden");
     document.getElementById("registerMessage").textContent = "";
+    document.getElementById("loginError").textContent = "";
   };
 
   window.loadPreviousAnswers = function() {
-    const answers = window.users[window.currentUser].answers || {};
-    const comment = window.users[window.currentUser].comment || "";
+    const answers = window.users[window.currentUser]?.answers || {};
+    const comment = window.users[window.currentUser]?.comment || "";
 
     if (answers.date1) {
       const el = document.querySelector(`input[name="date1"][value="${answers.date1}"]`);
       if (el) el.checked = true;
+    } else {
+      // 未選択の場合、ラジオのチェックを外す
+      document.querySelectorAll('input[name="date1"]').forEach(input => input.checked = false);
     }
 
     document.getElementById("comment").value = comment;
   };
 
-  document.getElementById("scheduleForm").addEventListener("submit", async function(e) {
-    e.preventDefault();
-    const result1 = document.querySelector('input[name="date1"]:checked')?.value || "";
-    const comment = document.getElementById("comment").value;
-
-const prevAnswers = window.users[window.currentUser].answers || {};
-const prevDate1 = prevAnswers.date1 || "";
-const updateData ={
-password: window.users[window.currentUser].password,
-answers: {date1: result1}
-comment: comment
-};
-
-if (result1 !== prevDate1){
-updateData.updatedAt = serverTimestamp();}
-
-    try {
-      await setDoc(doc(db, "users", window.currentUser),updateData); {
-        password: window.users[window.currentUser].password,
-        answers: { date1: result1 },
-        comment: comment,
-      };
-
-
-      window.users[window.currentUser].answers = { date1: result1 };
-      window.users[window.currentUser].comment = comment;
-
-      document.getElementById("submitMessage").textContent = "回答を保存しました！";
-      await showAllResults();
-    } catch (error) {
-      console.error(error);
-      document.getElementById("submitMessage").textContent = "保存に失敗しました。";
-    }
-  });
-
-  async function showAllResults() {
+  window.showAllResults = async function() {
     const tbody = document.getElementById("resultTable").querySelector("tbody");
-    const status = document.getElementById("maruStatus");
+    const status = document.getElementById("maruStatusResult");
     tbody.innerHTML = "";
     status.textContent = "";
 
     let countMaru = 0;
     let highlighted = 0;
-    try {const docsArray = [];
+
+    try {
+      const docsArray = [];
       const querySnapshot = await getDocs(collection(db, "users"));
-querySnapshot.forEach(docSnap => {
-docsArray.push({id:docSnap.id, data: docSnap.data()});
-})
-docsArray.sort((a, b)=>{
-const t1= a.data.updatedAt ? a.data.updatedAt.toMillis() : 0;
-const t2= b.data.updatedAt ? b.data.updatedAt.toMillis() : 0;
-return t1-t2;
-});
+      querySnapshot.forEach(docSnap => {
+        docsArray.push({id: docSnap.id, data: docSnap.data()});
+      });
+
+      // 更新日時がある場合はそれでソート、なければ0で古い順に
+      docsArray.sort((a, b) => {
+        const t1 = a.data.updatedAt ? a.data.updatedAt.toMillis() : 0;
+        const t2 = b.data.updatedAt ? b.data.updatedAt.toMillis() : 0;
+        return t1 - t2;
+      });
+
       window.users = {};
 
-      docsArray.forEach(({id, data}) =>{
-window.users[id] = data;
-const ans = data.answers || {};
-const comment = data.comment || "";
+      docsArray.forEach(({id, data}) => {
+        window.users[id] = data;
+        const ans = data.answers || {};
+        const comment = data.comment || "";
+
         // 回答もコメントも空なら表示しない
         if (!ans.date1 && !comment) return;
 
@@ -240,11 +225,54 @@ const comment = data.comment || "";
       if (countMaru >= 3) {
         status.textContent = "※ この会はすでに満席となりました。以降は観戦/リザーバー枠での参加を募集いたします。";
         status.style.color = "red";
+      } else {
+        status.textContent = "";
       }
     } catch (error) {
       console.error(error);
     }
-  }
+  };
+
+  window.addEventListener("DOMContentLoaded", () => {
+    const scheduleForm = document.getElementById("scheduleForm");
+    scheduleForm.addEventListener("submit", async function(e) {
+      e.preventDefault();
+
+      if (!window.currentUser) {
+        alert("ログインしてください。");
+        return;
+      }
+
+      const result1 = document.querySelector('input[name="date1"]:checked')?.value || "";
+      const comment = document.getElementById("comment").value;
+
+      const prevAnswers = window.users[window.currentUser]?.answers || {};
+      const prevDate1 = prevAnswers.date1 || "";
+
+      const updateData = {
+        password: window.users[window.currentUser].password,
+        answers: { date1: result1 },
+        comment: comment,
+      };
+
+      if (result1 !== prevDate1) {
+        updateData.updatedAt = serverTimestamp();
+      }
+
+      try {
+        await setDoc(doc(db, "users", window.currentUser), updateData);
+
+        window.users[window.currentUser].answers = { date1: result1 };
+        window.users[window.currentUser].comment = comment;
+
+        document.getElementById("submitMessage").textContent = "回答を保存しました！";
+        await showAllResults();
+      } catch (error) {
+        console.error(error);
+        document.getElementById("submitMessage").textContent = "保存に失敗しました。";
+      }
+    });
+  });
 </script>
 </head>
 <body>
@@ -255,7 +283,7 @@ const comment = data.comment || "";
   <input type="password" id="password" placeholder="パスワード" /><br /><br />
   <button onclick="login()">ログイン</button>
   <button onclick="showRegister()">新規登録</button>
-  <p id="loginError" style="color:red;"></p>
+  <p id="loginError"></p>
 </div>
 
 <div class="container hidden" id="registerSection">
@@ -264,59 +292,57 @@ const comment = data.comment || "";
   <input type="password" id="newPassword" placeholder="パスワード" /><br /><br />
   <button onclick="register()">登録</button>
   <button onclick="backToLogin()">戻る</button>
-  <p id="registerMessage" style="color:green;"></p>
+  <p id="registerMessage"></p>
 </div>
 
 <div class="container hidden" id="formSection">
   <h2>日程調整アンケート</h2>
   <p id="welcomeMsg"></p>
-<p id="maruStatus" style="margin-top: 5px;"></p>
   <form id="scheduleForm">
     <table>
       <thead>
         <tr>
-          <th>日付</th>
-          <th>〇</th>
-          <th>△</th>
-          <th>✕</th>
+          <th>日時候補</th>
+          <th>参加可否（〇、×、△）</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td>5/30(金)19:00～24:00</td>
-          <td><input type="radio" name="date1" value="〇" required /></td>
-          <td><input type="radio" name="date1" value="△" /></td>
-          <td><input type="radio" name="date1" value="✕" /></td>
+          <td>5/26(日) 10:00〜</td>
+          <td>
+            <label><input type="radio" name="date1" value="〇" />〇</label>
+            <label><input type="radio" name="date1" value="×" />×</label>
+            <label><input type="radio" name="date1" value="△" />△</label>
+          </td>
         </tr>
       </tbody>
     </table>
-    <br />
-    <label for="comment">コメント（任意）:</label><br />
-    <textarea id="comment" placeholder="例：午後ならOKです！など"></textarea><br /><br />
-    <button type="submit">送信・更新</button>
-    <p id="submitMessage" style="color:green;"></p>
+    <p id="maruStatusForm"></p>
+
+    <p>コメント（任意）</p>
+    <textarea id="comment" placeholder="コメントを入力してください"></textarea><br /><br />
+
+    <button type="submit">回答を送信</button>
+    <p id="submitMessage"></p>
   </form>
 </div>
 
 <div class="container hidden" id="resultSection">
-  <h2>全員の回答一覧</h2>
-  <p id="maruStatus"></p>
+  <h2>全参加者の回答一覧</h2>
   <table id="resultTable">
     <thead>
       <tr>
-        <th>ID</th>
-        <th>5/30(金)</th>
+        <th>参加者ID</th>
+        <th>参加可否</th>
         <th>コメント</th>
       </tr>
     </thead>
-    <tbody></tbody>
+    <tbody>
+      <!-- ここに結果が入る -->
+    </tbody>
   </table>
+  <p id="maruStatusResult"></p>
 </div>
 
 </body>
 </html>
-
-
-
-
-kk
