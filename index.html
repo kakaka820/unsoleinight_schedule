@@ -206,7 +206,7 @@
         const isMaru = ans.date1 === "〇";
         let maruClass = "";
 
-        if (isMaru && highlighted < 3) {
+        if (isMaru && countMaru >= 3 && highlighted < 3) {
           maruClass = "highlight";
           highlighted++;
         }
@@ -350,3 +350,4 @@
 
 
 
+テスト
