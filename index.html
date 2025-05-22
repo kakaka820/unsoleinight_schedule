@@ -211,8 +211,12 @@
           highlighted++;
         }
 
-        if (isMaru) countMaru++;
-
+        if (isMaru)if (highlighted < 3) {
+      maruClass = "highlight";
+      highlighted++;
+    }
+    countMaru++;
+  }
         const row = `
           <tr>
             <td>${id}</td>
