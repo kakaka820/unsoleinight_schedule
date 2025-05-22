@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -53,7 +52,7 @@
 </style>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-  import { getFirestore, doc, setDoc, getDoc, collection, getDocs, serverTimestamp, onSnapshot, collection  } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, getDoc, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
@@ -157,157 +156,83 @@
   };
 
   window.loadPreviousAnswers = function() {
-  const answers = window.users[window.currentUser]?.answers || {};
-  const comment = window.users[window.currentUser]?.comment || "";
+    const answers = window.users[window.currentUser]?.answers || {};
+    const comment = window.users[window.currentUser]?.comment || "";
 
-  for (let i = 1; i <= 4; i++) {
-    if (answers[`date${i}`]) {
-      const el = document.querySelector(`input[name="date${i}"][value="${answers[`date${i}`]}"]`);
+    if (answers.date1) {
+      const el = document.querySelector(`input[name="date1"][value="${answers.date1}"]`);
       if (el) el.checked = true;
     } else {
       // 未選択の場合、ラジオのチェックを外す
-     document.querySelectorAll(`input[name="date${i}"]`).forEach(input => input.checked = false);
+      document.querySelectorAll('input[name="date1"]').forEach(input => input.checked = false);
     }
-  }
 
-  document.getElementById("comment").value = comment;
-};
-window.addEventListener("DOMContentLoaded", () => {
-  const scheduleForm = document.getElementById("scheduleForm");
- scheduleForm.addEventListener("submit", async function(e) {
-  e.preventDefault();
-
-  if (!window.currentUser) {
-    alert("ログインしてください。");
-    return;
-  }
-
-  const result = {};
-  let hasSelection = false;
-// 各日付の選択肢を取得
-for (let i = 1; i <= 4; i++) {
-    const selectedValue = document.querySelector(`input[name="date${i}"]:checked`)?.value || "";
-    if (selectedValue) {
-      result[`date${i}`] = selectedValue;
-      hasSelection = true;
-    } else {
-      result[`date${i}`] = "";  // 未選択の場合は空文字
-    }
-  }
-
-   const comment = document.getElementById("comment").value;
-
-  const prevAnswers = window.users[window.currentUser]?.answers || {};
-  const updatedAnswers = { ...prevAnswers, ...result };
-
-  const updateData = {
-    password: window.users[window.currentUser].password,
-    answers: updatedAnswers,
-    comment: comment,
+    document.getElementById("comment").value = comment;
   };
 
-// もし選択肢が変更されていたら更新
-    if (JSON.stringify(result) !== JSON.stringify(prevAnswers)) {
-    updateData.updatedAt = serverTimestamp();
-  }
-
-  try {
-    await setDoc(doc(db, "users", window.currentUser), updateData);
-
-
- // 保存したデータをクライアントに反映
-    window.users[window.currentUser].answers = updatedAnswers;
-    window.users[window.currentUser].comment = comment;
-
-    document.getElementById("submitMessage").textContent = "回答を保存しました！";
-    await showAllResults();
-  } catch (error) {
-    console.error(error);
-    document.getElementById("submitMessage").textContent = "保存に失敗しました。";
-  }
-});
-
-
- window.showAllResults = async function() {
-  const tbody = document.getElementById("resultTable").querySelector("tbody");
-  const status = document.getElementById("maruStatusResult");
-  tbody.innerHTML = "";
-  status.textContent = "";
+  window.showAllResults = async function() {
+    const tbody = document.getElementById("resultTable").querySelector("tbody");
+    const status = document.getElementById("maruStatusResult");
+    tbody.innerHTML = "";
+    status.textContent = "";
 
     let countMaru = 0;
-  let highlighted = 0;
+    let highlighted = 0;
 
-
-try {
-    const docsArray = [];
-    const querySnapshot = await getDocs(collection(db, "users"));
-    querySnapshot.forEach(docSnap => {
-      docsArray.push({ id: docSnap.id, data: docSnap.data() });
-    });
-
-
+    try {
+      const docsArray = [];
+      const querySnapshot = await getDocs(collection(db, "users"));
+      querySnapshot.forEach(docSnap => {
+        docsArray.push({id: docSnap.id, data: docSnap.data()});
+      });
 
       // 更新日時がある場合はそれでソート、なければ0で古い順に
       docsArray.sort((a, b) => {
-      const t1 = a.data.updatedAt ? a.data.updatedAt.toMillis() : 0;
-      const t2 = b.data.updatedAt ? b.data.updatedAt.toMillis() : 0;
-      return t1 - t2;
-    });
-
+        const t1 = a.data.updatedAt ? a.data.updatedAt.toMillis() : 0;
+        const t2 = b.data.updatedAt ? b.data.updatedAt.toMillis() : 0;
+        return t1 - t2;
+      });
 
       window.users = {};
 
-
-
-     docsArray.forEach(({ id, data }) => {
-      window.users[id] = data;
-      const ans = data.answers || {};
-      const comment = data.comment || "";
+      docsArray.forEach(({id, data}) => {
+        window.users[id] = data;
+        const ans = data.answers || {};
+        const comment = data.comment || "";
 
         // 回答もコメントも空なら表示しない
-     if (!Object.values(ans).some(val => val) && !comment) return;
+        if (!ans.date1 && !comment) return;
 
-    let maruClass = "";
-      let countDateMaru = 0;
+        const isMaru = ans.date1 === "〇";
+        let maruClass = "";
 
-        // 各日付の「〇」をカウント
-     for (let i = 1; i <= 4; i++) {
-        if (ans[`date${i}`] === "〇") {
-          countDateMaru++;
-          if (highlighted < 3) {
-            maruClass = "highlight";
-            highlighted++;
-          }
+        if (isMaru && highlighted < 3) {
+          maruClass = "highlight";
+          highlighted++;
         }
-      }
 
-      if (countDateMaru > 0) countMaru++;
+        if (isMaru) countMaru++;
 
-// 結果テーブルの行を追加
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${id}</td>
-        <td>${ans.date1 || ""}</td>
-        <td>${ans.date2 || ""}</td>
-        <td>${ans.date3 || ""}</td>
-        <td>${ans.date4 || ""}</td>
-        <td>${comment}</td>
-      `;
-      tbody.appendChild(row);
-    });
-
-
+        const row = `
+          <tr>
+            <td>${id}</td>
+            <td class="${maruClass}">${ans.date1 || ""}</td>
+            <td>${comment}</td>
+          </tr>
+        `;
+        tbody.innerHTML += row;
+      });
 
       if (countMaru >= 3) {
-      status.textContent = "※ この会はすでに満席となりました。";
-      status.style.color = "red";
-    } else {
-      status.textContent = "";
+        status.textContent = "※ この会はすでに満席となりました。以降は観戦/リザーバー枠での参加を募集いたします。";
+        status.style.color = "red";
+      } else {
+        status.textContent = "";
+      }
+    } catch (error) {
+      console.error(error);
     }
-  } catch (error) {
-    console.error(error);
-  }
-};
+  };
 
   window.addEventListener("DOMContentLoaded", () => {
     const scheduleForm = document.getElementById("scheduleForm");
@@ -393,24 +318,6 @@ try {
           <td><input type="radio" name="date1" value="△" /></td>
           <td><input type="radio" name="date1" value="✕" /></td>
         </tr>
-<tr>
-        <td>6/1(日)13:00～18:00</td>
-        <td><input type="radio" name="date2" value="〇" /></td>
-        <td><input type="radio" name="date2" value="△" /></td>
-        <td><input type="radio" name="date2" value="✕" /></td>
-      </tr>
-      <tr>
-        <td>6/3(火)10:00～15:00</td>
-        <td><input type="radio" name="date3" value="〇" /></td>
-        <td><input type="radio" name="date3" value="△" /></td>
-        <td><input type="radio" name="date3" value="✕" /></td>
-      </tr>
-<tr>
-        <td>6/5(木)16:00～21:00</td>
-        <td><input type="radio" name="date4" value="〇" /></td>
-        <td><input type="radio" name="date4" value="△" /></td>
-        <td><input type="radio" name="date4" value="✕" /></td>
-      </tr>
       </tbody>
     </table>
     <br />
@@ -443,3 +350,35 @@ try {
 
 
 
+現行
+＊満員になったら表示されるようにしました。
+＊現在対応してるのは一つの日程のみです。
+＊アカウント登録しただけでは回答者一覧に表示されないよう修正しました。
+＊赤文字上に持ってくとこまでやりました。
+＊スマホサイズに対応しました。（PCのしゅっとした感じは消えました。まぁいいや）
+PC版（最初期）はheadを消去して、
+.container{
+max-width:700px;
+margin: auto;
+background: white;
+padding:20px;
+border-radius:10px;
+box-shadow: 0 0 10px #aaa;
+margin-bottom:30px;}
+
+table{
+width: 100%;
+border-collapse:collapse;
+margin-top:10px;}
+
+でした。備忘録。
+*赤背景まで対応しました。
+*最終更新時間を記録し、更新順になるように名簿を対応させました。
+＊リロードやコメントの変更だけでは順序が変わらないよう調整し、〇△×に変更があった場合のみ待機列を後ろに移動させる仕様としました。
+
+
+
+
+今後実装したい仕様
+＊複数日に対応
+＊満員になるまでは〇の人も赤表示にはしない。
