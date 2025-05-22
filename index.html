@@ -207,14 +207,13 @@
         const isMaru = ans.date1 === "〇";
         let maruClass = "";
 
-        if (isMaru) {
-          if(highlightCount < 3)
-    highlightCount++;  // highlightCountをインクリメント
-          if(highlightCount=3)
-          maruClass = "highlight";
-          highlightcount=3;
-            
-  }
+       if (isMaru) {
+        if (highlightCount < 3) {
+          highlightCount++;  // highlightCountをインクリメント
+        } else {
+          maruClass = "highlight";  // highlightCountが3に達したらhighlightを付与
+        }
+      }
 
 if (isMaru) countMaru++;
 
@@ -356,7 +355,7 @@ if (isMaru) countMaru++;
 
 
 
-mmm
+888
 
 
 
