@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -157,12 +159,14 @@
     const result1 = document.querySelector('input[name="date1"]:checked')?.value || "";
     const comment = document.getElementById("comment").value;
 
-    try {
+    try {import{serverTimestamp}from"https://www.gstatic.com/firebasejs//11.8.1/firebase-firestore.js;
       await setDoc(doc(db, "users", window.currentUser), {
         password: window.users[window.currentUser].password,
         answers: { date1: result1 },
-        comment: comment
+        comment: comment,
+updatedAt:serverTimestamp()
       });
+
 
       window.users[window.currentUser].answers = { date1: result1 };
       window.users[window.currentUser].comment = comment;
@@ -185,6 +189,14 @@
     let highlighted = 0;
     try {
       const querySnapshot = await getDocs(collection(db, "users"));
+querySnapshot.forEach(docSnap => {
+docsArray.push({id:docSnap.id, data: docSnap.data()});
+})
+docsArray.sort((a, b)=>{
+const t1= a.data.updatedAt ? a.data.updatedAt.toMillis() : 0;
+const t2= b.data.updatedAt ? b.data.updatedAt.toMillis() : 0;
+return t1-t2;
+});
       window.users = {};
 
       querySnapshot.forEach((docSnap) => {
@@ -296,6 +308,5 @@
 </body>
 </html>
 
+今回の目標：回答日時を記録して更新順にソート
 
-
-垢背景テスト中
