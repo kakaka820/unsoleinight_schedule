@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>日程調整アンケート</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f0f8ff;
+      padding: 20px;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #aaa;
+      margin-bottom: 30px;
+    }
+    .hidden {
+      display: none;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      text-align: center;
+      padding: 8px;
+    }
+    th {
+      background-color: #e0f0ff;
+    }
+    textarea {
+      width: 100%;
+      height: 60px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ログイン画面 -->
+<div class="container" id="loginSection">
+  <h2>ログイン</h2>
+  <input type="text" id="userId" placeholder="ID"><br><br>
+  <input type="password" id="password" placeholder="パスワード"><br><br>
+  <button onclick="login()">ログイン</button>
+  <button onclick="showRegister()">新規登録</button>
+  <p id="loginError" style="color:red;"></p>
+</div>
+
+<!-- 新規登録画面 -->
+<div class="container hidden" id="registerSection">
+  <h2>新規アカウント作成</h2>
+  <input type="text" id="newUserId" placeholder="新しいID"><br><br>
+  <input type="password" id="newPassword" placeholder="パスワード"><br><br>
+  <button onclick="register()">登録</button>
+  <button onclick="backToLogin()">戻る</button>
+  <p id="registerMessage" style="color:green;"></p>
+</div>
+
+<!-- アンケート画面 -->
+<div class="container hidden" id="formSection">
+  <h2>日程調整アンケート</h2>
+  <p id="welcomeMsg"></p>
+  <form id="scheduleForm">
+    <table>
+      <thead>
+        <tr>
+          <th>日付</th>
+          <th>〇</th>
+          <th>△</th>
+          <th>✕</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>5/30(金)19:00～24:00</td>
+          <td><input type="radio" name="date1" value="〇" required></td>
+          <td><input type="radio" name="date1" value="△"></td>
+          <td><input type="radio" name="date1" value="✕"></td>
+        </tr>
+        </tbody>
+    </table>
+    <br>
+    <label for="comment">コメント（任意）:</label><br>
+    <textarea id="comment" placeholder="例：午後ならOKです！など"></textarea><br><br>
+    <button type="submit">送信・更新</button>
+    <p id="submitMessage" style="color:green;"></p>
+  </form>
+</div>
+
+<!-- 全体の集計表示 -->
+<div class="container hidden" id="resultSection">
+  <h2>全員の回答一覧</h2>
+  <table id="resultTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>5/30(金)19:00～24:00</th>
+        <th>コメント</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+  let users = JSON.parse(localStorage.getItem("users") || "{}");
+  let currentUser = "";
+
+  function login() {
+    const id = document.getElementById("userId").value;
+    const pass = document.getElementById("password").value;
+
+    if (users[id] && users[id].password === pass) {
+      currentUser = id;
+      document.getElementById("loginSection").classList.add("hidden");
+      document.getElementById("formSection").classList.remove("hidden");
+      document.getElementById("resultSection").classList.remove("hidden");
+      document.getElementById("welcomeMsg").textContent = `${currentUser} さんとしてログイン中`;
+      loadPreviousAnswers();
+      showAllResults();
+    } else {
+      document.getElementById("loginError").textContent = "IDまたはパスワードが違います。";
+    }
+  }
+
+  function register() {
+    const newId = document.getElementById("newUserId").value;
+    const newPass = document.getElementById("newPassword").value;
+
+    if (!newId || !newPass) {
+      document.getElementById("registerMessage").style.color = "red";
+      document.getElementById("registerMessage").textContent = "IDとパスワードを入力してください。";
+      return;
+    }
+
+    if (users[newId]) {
+      document.getElementById("registerMessage").style.color = "red";
+      document.getElementById("registerMessage").textContent = "このIDはすでに使われています。";
+    } else {
+      users[newId] = { password: newPass, answers: {}, comment: "" };
+      localStorage.setItem("users", JSON.stringify(users));
+      document.getElementById("registerMessage").style.color = "green";
+      document.getElementById("registerMessage").textContent = "登録成功！ログイン画面に戻ってください。";
+    }
+  }
+
+  function showRegister() {
+    document.getElementById("loginSection").classList.add("hidden");
+    document.getElementById("registerSection").classList.remove("hidden");
+  }
+
+  function backToLogin() {
+    document.getElementById("registerSection").classList.add("hidden");
+    document.getElementById("loginSection").classList.remove("hidden");
+    document.getElementById("registerMessage").textContent = "";
+  }
+
+  function loadPreviousAnswers() {
+    const answers = users[currentUser].answers || {};
+    const comment = users[currentUser].comment || "";
+
+    if (answers.date1) {
+      document.querySelector(`input[name="date1"][value="${answers.date1}"]`).checked = true;
+    }
+    if (answers.date2) {
+      document.querySelector(`input[name="date2"][value="${answers.date2}"]`).checked = true;
+    }
+    if (answers.date3) {
+      document.querySelector(`input[name="date3"][value="${answers.date3}"]`).checked = true;
+    }
+
+    document.getElementById("comment").value = comment;
+  }
+
+  document.getElementById("scheduleForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const result1 = document.querySelector('input[name="date1"]:checked').value;
+    const comment = document.getElementById("comment").value;
+
+    users[currentUser].answers = {
+      date1: result1,
+      };
+    users[currentUser].comment = comment;
+
+    localStorage.setItem("users", JSON.stringify(users));
+    document.getElementById("submitMessage").textContent = "回答を保存しました！";
+    showAllResults();
+  });
+
+  function showAllResults() {
+    const tbody = document.getElementById("resultTable").querySelector("tbody");
+    tbody.innerHTML = "";
+    for (const [id, data] of Object.entries(users)) {
+      const ans = data.answers || {};
+      const comment = data.comment || "";
+      const row = `
+        <tr>
+          <td>${id}</td>
+          <td>${ans.date1 || "-"}</td>
+          <td>${comment}</td>
+        </tr>
+      `;
+      tbody.innerHTML += row;
+    }
+  }
+</script>
+
+</body>
+</html>
