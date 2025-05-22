@@ -1,3 +1,5 @@
+chatGPT
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -298,32 +300,31 @@
 <div class="container hidden" id="formSection">
   <h2>日程調整アンケート</h2>
   <p id="welcomeMsg"></p>
+<p id="maruStatus" style="margin-top: 5px;"></p>
   <form id="scheduleForm">
     <table>
       <thead>
         <tr>
-          <th>日時候補</th>
-          <th>参加可否（〇、×、△）</th>
+          <th>日付</th>
+          <th>〇</th>
+          <th>△</th>
+          <th>✕</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td>5/26(日) 10:00〜</td>
-          <td>
-            <label><input type="radio" name="date1" value="〇" />〇</label>
-            <label><input type="radio" name="date1" value="×" />×</label>
-            <label><input type="radio" name="date1" value="△" />△</label>
-          </td>
+          <td>5/30(金)19:00～24:00</td>
+          <td><input type="radio" name="date1" value="〇" required /></td>
+          <td><input type="radio" name="date1" value="△" /></td>
+          <td><input type="radio" name="date1" value="✕" /></td>
         </tr>
       </tbody>
     </table>
-    <p id="maruStatusForm"></p>
-
-    <p>コメント（任意）</p>
-    <textarea id="comment" placeholder="コメントを入力してください"></textarea><br /><br />
-
-    <button type="submit">回答を送信</button>
-    <p id="submitMessage"></p>
+    <br />
+    <label for="comment">コメント（任意）:</label><br />
+    <textarea id="comment" placeholder="例：午後ならOKです！など"></textarea><br /><br />
+    <button type="submit">送信・更新</button>
+    <p id="submitMessage" style="color:green;"></p>
   </form>
 </div>
 
@@ -346,3 +347,6 @@
 
 </body>
 </html>
+
+
+test
