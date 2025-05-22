@@ -167,7 +167,7 @@
       window.users[window.currentUser].answers = { date1: result1 };
       window.users[window.currentUser].comment = comment;
 
-      document.getElementById("submitMessage").textContent = "回答をFirestoreに保存しました！";
+      document.getElementById("submitMessage").textContent = "回答を保存しました！";
       await showAllResults();
     } catch (error) {
       console.error(error);
@@ -218,7 +218,7 @@
       });
 
       if (countMaru >= 3) {
-        status.textContent = "※ この日程はすでに満員です。";
+        status.textContent = "※ この会はすでに満席となりました。以降は観戦/リザーバー枠での参加を募集いたします。";
         status.style.color = "red";
       }
     } catch (error) {
@@ -250,6 +250,7 @@
 <div class="container hidden" id="formSection">
   <h2>日程調整アンケート</h2>
   <p id="welcomeMsg"></p>
+<p id="maruStatus" style="margin-top: 5px;"></p>
   <form id="scheduleForm">
     <table>
       <thead>
@@ -297,4 +298,4 @@
 
 
 
-背景テスト中
+垢背景テスト中
