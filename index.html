@@ -47,7 +47,7 @@
 </style>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-  import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, getDoc, collection, getDocs, severTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
@@ -159,7 +159,7 @@
     const result1 = document.querySelector('input[name="date1"]:checked')?.value || "";
     const comment = document.getElementById("comment").value;
 
-    try {import{serverTimestamp}from"https://www.gstatic.com/firebasejs//11.8.1/firebase-firestore.js;
+    try {
       await setDoc(doc(db, "users", window.currentUser), {
         password: window.users[window.currentUser].password,
         answers: { date1: result1 },
@@ -187,7 +187,7 @@ updatedAt:serverTimestamp()
 
     let countMaru = 0;
     let highlighted = 0;
-    try {
+    try {const docsArray = [];
       const querySnapshot = await getDocs(collection(db, "users"));
 querySnapshot.forEach(docSnap => {
 docsArray.push({id:docSnap.id, data: docSnap.data()});
@@ -308,5 +308,6 @@ return t1-t2;
 </body>
 </html>
 
-今回の目標：回答日時を記録して更新順にソート
 
+
+回答日時を記録して更新順にソート
