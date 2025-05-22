@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -199,13 +198,10 @@ return t1-t2;
 });
       window.users = {};
 
-      querySnapshot.forEach((docSnap) => {
-        const id = docSnap.id;
-        const data = docSnap.data();
-        window.users[id] = data;
-        const ans = data.answers || {};
-        const comment = data.comment || "";
-
+      docsArray.forEach(({id, data}) =>{
+window.users[id] = data;
+const ans = data.answers || {};
+const comment = data.comment || "";
         // 回答もコメントも空なら表示しない
         if (!ans.date1 && !comment) return;
 
@@ -310,4 +306,4 @@ return t1-t2;
 
 
 
-回答日時を記録して更新順にソート
+soat
