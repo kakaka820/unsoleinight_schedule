@@ -208,9 +208,10 @@
         let maruClass = "";
 
         if (countMaru>=3) {
-    maruClass = "highlight";
           if(highlightCount < 3)
     highlightCount++;  // highlightCountをインクリメント
+          if(highlightCount=3)
+          maruClass = "highlight";
   }
 
 if (isMaru) countMaru++;
@@ -350,7 +351,7 @@ if (isMaru) countMaru++;
 </body>
 </html>
 
-last
+test
 
 
 
