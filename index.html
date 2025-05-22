@@ -53,7 +53,7 @@
 </style>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-  import { getFirestore, doc, setDoc, getDoc, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, getDoc, collection, getDocs, serverTimestamp, onSnapshot, collection  } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
@@ -278,18 +278,27 @@ for (let i = 1; i <= 4; i++) {
 
       if (countDateMaru > 0) countMaru++;
 
-        const row = `
-          <tr>
-            <td>${id}</td>
-          <td class="${maruClass}">${ans.date1 || ""}</td>
-          <td class="${maruClass}">${ans.date2 || ""}</td>
-          <td class="${maruClass}">${ans.date3 || ""}</td>
-          <td class="${maruClass}">${ans.date4 || ""}</td>
-          <td>${comment}</td>
-          </tr>
-        `;
-        tbody.innerHTML += row;
-      });
+const resultTable = document.getElementById('resultTable').getElementsByTagName('tbody')[0];
+const unsubscribe = onSnapshot(collection(db, "users"), (querySnapshot) => {
+  resultTable.innerHTML = "";
+querySnapshot.forEach((doc) => {
+    const data = doc.data();
+    const answers = data.answers || {};
+    const comment = data.comment || "";
+ // 各ユーザーの回答をテーブルに追加
+        const row =document.createElement('tr');
+          <tr>row.innerHTML = 
+            <td>${doc.id}</td>
+      <td>${answers.date1 || ""}</td>
+      <td>${answers.date2 || ""}</td>
+      <td>${answers.date3 || ""}</td>
+      <td>${answers.date4 || ""}</td>
+      <td>${comment}</td>
+    `;
+</tr>
+        resultTable.appendChild(row);
+  });
+});
 
       if (countMaru >= 3) {
         status.textContent = "※ この会はすでに満席となりました。以降は観戦/リザーバー枠での参加を募集いたします。";
@@ -435,4 +444,4 @@ for (let i = 1; i <= 4; i++) {
 </html>
 
 
-
+test
