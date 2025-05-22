@@ -209,12 +209,14 @@
 
        if (isMaru) {
   // 〇をつけた人数が3人未満なら highlight をつけない
-  if (countMaru >= 3) {
-    if (highlightCount < 3) {  // 最初の3人にのみ highlight をつける
-      highlightCount++;    // highlightCountをインクリメント
-      if (highlightCount <= 3) {
-        maruClass = "highlight";  // 3人目までに highlight をつける
-      }
+  if (countMaru <= 3) {
+      ;}
+    else :
+    highlightCount++;    // highlightCountをインクリメント
+    if (highlightCount <= 3) {// 最初の3人にのみ highlight をつける
+     maruClass = "highlight";  // 3人目までに highlight をつける
+       
+      
     }
   }
 }
@@ -356,6 +358,6 @@ if (isMaru) countMaru++;
 </body>
 </html>
 
-ううううううう
+ffffffffff
 
 
