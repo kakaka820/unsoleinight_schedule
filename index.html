@@ -210,7 +210,8 @@
         
         // 「〇」を選んだユーザーが3人以上の場合のみhighlightクラスを適用
       let maruClass = "";
-      if (maruCount >= 3 && isMaru && highlighted < 3) {
+      if (maruCount >= 3 ) {
+        if(isMaru && highlighted < 3)
         maruClass = "highlight";  // 3人以上の「〇」選択者に対してのみ強調表示
         highlighted++;
       }
@@ -356,7 +357,7 @@
 
 
 
-
+test
 
 
 ＊満員になるまでは〇の人も赤表示にはしない。
