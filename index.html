@@ -176,68 +176,63 @@
     tbody.innerHTML = "";
     status.textContent = "";
 
-        let highlighted = 0;
-    let highlightCount = 0;
-let countMaru = 0;
-const maruUsers = [];
+    let countMaru = 0;
+    let highlighted = 0;
 
-// 全データを取得してソート
-const docsArray = [];
-const querySnapshot = await getDocs(collection(db, "users"));
-querySnapshot.forEach(docSnap => {
-  docsArray.push({id: docSnap.id, data: docSnap.data()});
-});
+    try {
+      const docsArray = [];
+      const querySnapshot = await getDocs(collection(db, "users"));
+      querySnapshot.forEach(docSnap => {
+        docsArray.push({id: docSnap.id, data: docSnap.data()});
+      });
 
-docsArray.sort((a, b) => {
-  const t1 = a.data.updatedAt ? a.data.updatedAt.toMillis() : 0;
-  const t2 = b.data.updatedAt ? b.data.updatedAt.toMillis() : 0;
-  return t1 - t2;
-});
+      // 更新日時がある場合はそれでソート、なければ0で古い順に
+      docsArray.sort((a, b) => {
+        const t1 = a.data.updatedAt ? a.data.updatedAt.toMillis() : 0;
+        const t2 = b.data.updatedAt ? b.data.updatedAt.toMillis() : 0;
+        return t1 - t2;
+      });
 
-window.users = {};
-docsArray.forEach(({id, data}) => {
-  window.users[id] = data;
-  const ans = data.answers || {};
-  const comment = data.comment || "";
+      window.users = {};
 
-  if (!ans.date1 && !comment) return;
+      docsArray.forEach(({id, data}) => {
+        window.users[id] = data;
+        const ans = data.answers || {};
+        const comment = data.comment || "";
 
-  const isMaru = ans.date1 === "〇";
-  if (isMaru) {
-    countMaru++;
-    maruUsers.push(id); // ○をつけたユーザーを記録
-  }
-});
+        // 回答もコメントも空なら表示しない
+        if (!ans.date1 && !comment) return;
 
-// 〇が3人以上いるなら、先着3人にhighlightをつける
-const highlightedUsers = countMaru >= 3 ? maruUsers.slice(0, 3) : [];
+        const isMaru = ans.date1 === "〇";
+        let maruClass = "";
 
-tbody.innerHTML = ""; // テーブル初期化
+        if (isMaru && highlighted < 3) {
+          maruClass = "highlight";
+          highlighted++;
+        }
 
-docsArray.forEach(({id, data}) => {
-  const ans = data.answers || {};
-  const comment = data.comment || "";
+        if (isMaru) countMaru++;
 
-  if (!ans.date1 && !comment) return;
+        const row = `
+          <tr>
+            <td>${id}</td>
+            <td class="${maruClass}">${ans.date1 || ""}</td>
+            <td>${comment}</td>
+          </tr>
+        `;
+        tbody.innerHTML += row;
+      });
 
-  const maruClass = highlightedUsers.includes(id) ? "highlight" : "";
-
-  const row = `
-    <tr>
-      <td>${id}</td>
-      <td class="${maruClass}">${ans.date1 || ""}</td>
-      <td>${comment}</td>
-    </tr>
-  `;
-  tbody.innerHTML += row;
-});
-
-if (countMaru >= 3) {
-  status.textContent = "※ この会はすでに満席となりました。以降は観戦/リザーバー枠での参加を募集いたします。";
-  status.style.color = "red";
-} else {
-  status.textContent = "";
-}
+      if (countMaru >= 3) {
+        status.textContent = "※ この会はすでに満席となりました。以降は観戦/リザーバー枠での参加を募集いたします。";
+        status.style.color = "red";
+      } else {
+        status.textContent = "";
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   window.addEventListener("DOMContentLoaded", () => {
     const scheduleForm = document.getElementById("scheduleForm");
@@ -347,7 +342,7 @@ if (countMaru >= 3) {
       <!-- ここに結果が入る -->
     </tbody>
   </table>
-  <p id="maruStatusResult"></p>
+
 </div>
 
 </body>
@@ -355,7 +350,36 @@ if (countMaru >= 3) {
 
 
 
-tas
+現行
+＊満員になったら表示されるようにしました。
+＊現在対応してるのは一つの日程のみです。
+＊アカウント登録しただけでは回答者一覧に表示されないよう修正しました。
+＊赤文字上に持ってくとこまでやりました。
+＊スマホサイズに対応しました。（PCのしゅっとした感じは消えました。まぁいいや）
+PC版（最初期）はheadを消去して、
+.container{
+max-width:700px;
+margin: auto;
+background: white;
+padding:20px;
+border-radius:10px;
+box-shadow: 0 0 10px #aaa;
+margin-bottom:30px;}
+
+table{
+width: 100%;
+border-collapse:collapse;
+margin-top:10px;}
+
+でした。備忘録。
+*赤背景まで対応しました。(現在の挙動：〇回答が早かった3名に赤表示)
+
+*最終更新時間を記録し、更新順になるように名簿を対応させました。
+＊リロードやコメントの変更だけでは順序が変わらないよう調整し、〇△×に変更があった場合のみ待機列を後ろに移動させる仕様としました。
 
 
 
+
+今後実装したい仕様
+＊複数日に対応
+＊満員になるまでは〇の人も赤表示にはしない。
