@@ -178,6 +178,7 @@
 
     let countMaru = 0;
     let highlighted = 0;
+    let highlightCount = 0;
 
     try {
       const docsArray = [];
@@ -206,9 +207,10 @@
         const isMaru = ans.date1 === "〇";
         let maruClass = "";
 
-        if (isMaru) {
+        if (isMaru && highlightCount < 3) {
     maruClass = "highlight";
-}
+    highlightCount++;  // highlightCountをインクリメント
+  }
 
 if (isMaru) countMaru++;
 
@@ -347,7 +349,7 @@ if (isMaru) countMaru++;
 </body>
 </html>
 
-ｂ
+last
 
 
 
