@@ -166,7 +166,7 @@
         window.users[window.currentUser].answers = { date1: result1 };
         window.users[window.currentUser].comment = comment;
 
-        document.getElementById("submitMessage").textContent = "回答をFirestoreに保存しました！";
+        document.getElementById("submitMessage").textContent = "回答を保存しました！";
         await showAllResults();
       } catch (error) {
         console.error(error);
@@ -200,26 +200,7 @@
       }
     }
 
-    // 日程初期化
-    window.resetSchedule = async function() {
-      if (!confirm("日程データをすべてクリアして新しい日程に切り替えます。よろしいですか？")) return;
-
-      try {
-        const querySnapshot = await getDocs(collection(db, "users"));
-        for (const docSnap of querySnapshot.docs) {
-          await updateDoc(doc(db, "users", docSnap.id), {
-            answers: {},
-            comment: ""
-          });
-        }
-        alert("全ユーザーの回答をクリアしました。新しい日程に切り替えてください。");
-        await showAllResults();
-      } catch (error) {
-        console.error("日程初期化に失敗:", error);
-        alert("日程初期化に失敗しました。");
-      }
-    };
-  </script>
+      </script>
 </head>
 
 <body>
@@ -284,3 +265,8 @@
 
 </body>
 </html>
+
+
+
+
+日程ボタンを削除
