@@ -200,18 +200,22 @@
         const ans = data.answers || {};
         const comment = data.comment || "";
 
-        // 回答もコメントも空なら表示しない
-        if (!ans.date1 && !comment) return;
+       // 回答もコメントも空なら表示しない
+      if (!ans.date1 && !comment) return;
 
-        const isMaru = ans.date1 === "〇";
-        let maruClass = "";
+      const isMaru = ans.date1 === "〇";
+      if (isMaru) {
+        maruCount++;  // 「〇」を選んだユーザー数をカウント
+      }
+        
+        // 「〇」を選んだユーザーが3人以上の場合のみhighlightクラスを適用
+      let maruClass = "";
+      if (maruCount >= 3 && isMaru && highlighted < 3) {
+        maruClass = "highlight";  // 3人以上の「〇」選択者に対してのみ強調表示
+        highlighted++;
+      }
 
-        if (isMaru && highlighted < 3) {
-          maruClass = "highlight";
-          highlighted++;
-        }
-
-        if (isMaru) countMaru++;
+      countMaru++;  // 参加者の数をカウント
 
         const row = `
           <tr>
@@ -354,5 +358,5 @@
 
 
 
-＊複数日に対応
+
 ＊満員になるまでは〇の人も赤表示にはしない。
