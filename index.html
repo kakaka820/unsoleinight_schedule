@@ -38,17 +38,20 @@
       width: 100%;
       height: 60px;
     }
+    .full {
+      color: red;
+      font-weight: bold;
+    }
   </style>
-
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
       authDomain: "unsoleinight-schedule.firebaseapp.com",
       projectId: "unsoleinight-schedule",
-      storageBucket: "unsoleinight-schedule.appspot.com",
+      storageBucket: "unsoleinight-schedule.firebasestorage.app",
       messagingSenderId: "1040333692698",
       appId: "1:1040333692698:web:fb0e4f481dff8167f756a3"
     };
@@ -59,7 +62,6 @@
     window.users = {};
     window.currentUser = "";
 
-    // ログイン
     window.login = async function() {
       const id = document.getElementById("userId").value;
       const pass = document.getElementById("password").value;
@@ -90,44 +92,42 @@
       }
     };
 
-    // 登録
     window.register = async function() {
       const newId = document.getElementById("newUserId").value;
       const newPass = document.getElementById("newPassword").value;
 
       if (!newId || !newPass) {
-        setRegisterMessage("IDとパスワードを入力してください。", "red");
+        document.getElementById("registerMessage").style.color = "red";
+        document.getElementById("registerMessage").textContent = "IDとパスワードを入力してください。";
         return;
       }
 
       if (/[<>]/.test(newId)) {
-        setRegisterMessage("IDに < または > を含めることはできません。", "red");
+        document.getElementById("registerMessage").style.color = "red";
+        document.getElementById("registerMessage").textContent = "<や>をIDに含めることはできません。";
         return;
       }
 
       try {
         const docSnap = await getDoc(doc(db, "users", newId));
         if (docSnap.exists()) {
-          setRegisterMessage("このIDはすでに使われています。", "red");
+          document.getElementById("registerMessage").style.color = "red";
+          document.getElementById("registerMessage").textContent = "このIDはすでに使われています。";
         } else {
           await setDoc(doc(db, "users", newId), {
             password: newPass,
             answers: {},
             comment: ""
           });
-          setRegisterMessage("登録成功！ログイン画面に戻ってください。", "green");
+          document.getElementById("registerMessage").style.color = "green";
+          document.getElementById("registerMessage").textContent = "登録成功！ログイン画面に戻ってください。";
         }
       } catch (error) {
         console.error(error);
-        setRegisterMessage("登録に失敗しました。", "red");
+        document.getElementById("registerMessage").style.color = "red";
+        document.getElementById("registerMessage").textContent = "登録に失敗しました。";
       }
     };
-
-    function setRegisterMessage(text, color) {
-      const msg = document.getElementById("registerMessage");
-      msg.style.color = color;
-      msg.textContent = text;
-    }
 
     window.showRegister = function() {
       document.getElementById("loginSection").classList.add("hidden");
@@ -146,7 +146,7 @@
 
       if (answers.date1) {
         const el = document.querySelector(`input[name="date1"][value="${answers.date1}"]`);
-        if (el) el.checked = true;
+        if(el) el.checked = true;
       }
 
       document.getElementById("comment").value = comment;
@@ -154,7 +154,7 @@
 
     document.getElementById("scheduleForm").addEventListener("submit", async function(e) {
       e.preventDefault();
-      const result1 = document.querySelector('input[name="date1"]:checked')?.value || "";
+      const result1 = document.querySelector('input[name="date1"]:checked').value;
       const comment = document.getElementById("comment").value;
 
       try {
@@ -166,7 +166,7 @@
         window.users[window.currentUser].answers = { date1: result1 };
         window.users[window.currentUser].comment = comment;
 
-        document.getElementById("submitMessage").textContent = "回答を保存しました！";
+        document.getElementById("submitMessage").textContent = "回答をFirestoreに保存しました！";
         await showAllResults();
       } catch (error) {
         console.error(error);
@@ -178,6 +178,8 @@
       const tbody = document.getElementById("resultTable").querySelector("tbody");
       tbody.innerHTML = "";
 
+      let countMaru = 0;
+
       try {
         const querySnapshot = await getDocs(collection(db, "users"));
         window.users = {};
@@ -187,25 +189,30 @@
           window.users[id] = data;
           const ans = data.answers || {};
           const comment = data.comment || "";
-          tbody.innerHTML += `
+
+          if (ans.date1 === "〇") countMaru++;
+
+          const row = `
             <tr>
               <td>${id}</td>
               <td>${ans.date1 || "-"}</td>
               <td>${comment}</td>
             </tr>
           `;
+          tbody.innerHTML += row;
         });
+
+        const fullMsg = countMaru >= 3 ? '<span class="full">（満員です）</span>' : "";
+        document.getElementById("fullNotice").innerHTML = fullMsg;
+
       } catch (error) {
         console.error(error);
       }
     }
-
-      </script>
+  </script>
 </head>
-
 <body>
 
-<!-- ログイン -->
 <div class="container" id="loginSection">
   <h2>ログイン</h2>
   <input type="text" id="userId" placeholder="ID" /><br /><br />
@@ -215,24 +222,27 @@
   <p id="loginError" style="color:red;"></p>
 </div>
 
-<!-- 新規登録 -->
 <div class="container hidden" id="registerSection">
   <h2>新規アカウント作成</h2>
   <input type="text" id="newUserId" placeholder="新しいID" /><br /><br />
   <input type="password" id="newPassword" placeholder="パスワード" /><br /><br />
   <button onclick="register()">登録</button>
   <button onclick="backToLogin()">戻る</button>
-  <p id="registerMessage"></p>
+  <p id="registerMessage" style="color:green;"></p>
 </div>
 
-<!-- アンケート -->
 <div class="container hidden" id="formSection">
   <h2>日程調整アンケート</h2>
   <p id="welcomeMsg"></p>
   <form id="scheduleForm">
     <table>
       <thead>
-        <tr><th>日付</th><th>〇</th><th>△</th><th>✕</th></tr>
+        <tr>
+          <th>日付</th>
+          <th>〇</th>
+          <th>△</th>
+          <th>✕</th>
+        </tr>
       </thead>
       <tbody>
         <tr>
@@ -247,15 +257,20 @@
     <label for="comment">コメント（任意）:</label><br />
     <textarea id="comment" placeholder="例：午後ならOKです！など"></textarea><br /><br />
     <button type="submit">送信・更新</button>
-      </form>
+    <p id="submitMessage" style="color:green;"></p>
+  </form>
 </div>
 
-<!-- 回答一覧 -->
 <div class="container hidden" id="resultSection">
   <h2>全員の回答一覧</h2>
+  <div id="fullNotice"></div>
   <table id="resultTable">
     <thead>
-      <tr><th>ID</th><th>5/30(金)19:00～24:00</th><th>コメント</th></tr>
+      <tr>
+        <th>ID</th>
+        <th>5/30(金)19:00～24:00</th>
+        <th>コメント</th>
+      </tr>
     </thead>
     <tbody></tbody>
   </table>
@@ -263,3 +278,5 @@
 
 </body>
 </html>
+
+パスワードの使いまわしは危険です。
