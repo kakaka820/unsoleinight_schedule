@@ -166,7 +166,7 @@
         window.users[window.currentUser].answers = { date1: result1 };
         window.users[window.currentUser].comment = comment;
 
-        document.getElementById("submitMessage").textContent = "回答をFirestoreに保存しました！";
+        document.getElementById("submitMessage").textContent = "回答を保存しました！";
         await showAllResults();
       } catch (error) {
         console.error(error);
@@ -202,7 +202,7 @@
           tbody.innerHTML += row;
         });
 
-        const fullMsg = countMaru >= 3 ? '<span class="full">（満員です）</span>' : "";
+        const fullMsg = countMaru >= 3 ? '<span class="full">（満員です。以降はリザーバー/観戦者枠となります。）</span>' : "";
         document.getElementById("fullNotice").innerHTML = fullMsg;
 
       } catch (error) {
@@ -279,4 +279,4 @@
 </body>
 </html>
 
-パスワードの使いまわしは危険です。
+パスワードの使いまわしは危険ですよ
