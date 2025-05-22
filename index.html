@@ -259,24 +259,33 @@ for (let i = 1; i <= 4; i++) {
         const ans = data.answers || {};
         const comment = data.comment || "";
 
-        // 回答もコメントも空なら表示しない
-        if (!ans.date1 && !comment) return;
+        / 回答もコメントも空なら表示しない
+      if (!Object.values(ans).some(val => val) && !comment) return;
 
-        const isMaru = ans.date1 === "〇";
-        let maruClass = "";
+      let maruClass = "";
+      let countDateMaru = 0;
 
-        if (isMaru && highlighted < 3) {
-          maruClass = "highlight";
-          highlighted++;
+        // 各日付の「〇」をカウント
+      for (let i = 1; i <= 4; i++) {
+        if (ans[`date${i}`] === "〇") {
+          countDateMaru++;
+          if (highlighted < 3) {
+            maruClass = "highlight";
+            highlighted++;
+          }
         }
+      }
 
-        if (isMaru) countMaru++;
+      if (countDateMaru > 0) countMaru++;
 
         const row = `
           <tr>
             <td>${id}</td>
-            <td class="${maruClass}">${ans.date1 || ""}</td>
-            <td>${comment}</td>
+          <td class="${maruClass}">${ans.date1 || ""}</td>
+          <td class="${maruClass}">${ans.date2 || ""}</td>
+          <td class="${maruClass}">${ans.date3 || ""}</td>
+          <td class="${maruClass}">${ans.date4 || ""}</td>
+          <td>${comment}</td>
           </tr>
         `;
         tbody.innerHTML += row;
@@ -426,4 +435,4 @@ for (let i = 1; i <= 4; i++) {
 </html>
 
 
-複数日テスト
+
