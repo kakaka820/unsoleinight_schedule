@@ -18,6 +18,7 @@
       border-radius: 10px;
       box-shadow: 0 0 10px #aaa;
       margin-bottom: 30px;
+      overflow-x: auto;
     }
     .hidden {
       display: none;
@@ -26,6 +27,7 @@
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
+      min-width: 600px;
     }
     th, td {
       border: 1px solid #ccc;
@@ -52,6 +54,12 @@
       color: red;
       font-weight: bold;
     }
+
+    @media (max-width: 600px) {
+      table, thead, tbody, th, td, tr {
+        font-size: 14px;
+      }
+    }
   </style>
 
   <script type="module">
@@ -59,12 +67,12 @@
     import { getFirestore, doc, setDoc, getDoc, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
-      authDomain: "unsoleinight-schedule.firebaseapp.com",
-      projectId: "unsoleinight-schedule",
-      storageBucket: "unsoleinight-schedule.appspot.com",
-      messagingSenderId: "1040333692698",
-      appId: "1:1040333692698:web:fb0e4f481dff8167f756a3"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_BUCKET",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -73,7 +81,7 @@
     window.users = {};
     window.currentUser = "";
 
-    window.login = async function() {
+    window.login = async function () {
       const id = document.getElementById("userId").value.trim();
       const pass = document.getElementById("password").value;
       if (!id || !pass) {
@@ -108,7 +116,7 @@
       }
     };
 
-    window.register = async function() {
+    window.register = async function () {
       const id = document.getElementById("newUserId").value.trim();
       const pass = document.getElementById("newPassword").value;
       if (!id || !pass) {
@@ -172,8 +180,11 @@
       });
 
       docsArray.forEach(({ id, data }) => {
-        window.users[id] = data;
         const a = data.answers || {};
+        const answered = ["date1", "date2", "date3"].some(date => a[date]);
+        if (!answered) return;
+
+        window.users[id] = data;
         ["date1", "date2", "date3"].forEach(date => {
           if (a[date] === "〇") {
             countMap[date]++;
@@ -185,6 +196,8 @@
       docsArray.forEach(({ id, data }) => {
         const a = data.answers || {};
         const comment = data.comment || "";
+        const answered = ["date1", "date2", "date3"].some(date => a[date]);
+        if (!answered) return;
 
         const row = document.createElement("tr");
         row.innerHTML = `
@@ -303,12 +316,14 @@
   <p id="msg-date1" class="fullMsg"></p>
   <p id="msg-date2" class="fullMsg"></p>
   <p id="msg-date3" class="fullMsg"></p>
-  <table id="resultTable">
-    <thead>
-      <tr><th>ID</th><th>5/25</th><th>5/26</th><th>5/29</th><th>コメント</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <div style="overflow-x: auto;">
+    <table id="resultTable">
+      <thead>
+        <tr><th>ID</th><th>5/25</th><th>5/26</th><th>5/29</th><th>コメント</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 </div>
 
 </body>
