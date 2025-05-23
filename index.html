@@ -1,3 +1,10 @@
+三人以下の場合は強調表示せず、
+
+
+
+
+三人以上になったら最初の三人だけ〇色付け。
+
 
 <!DOCTYPE html>
 <html lang="ja">
@@ -206,12 +213,16 @@
         const isMaru = ans.date1 === "〇";
         let maruClass = "";
 
-        if (isMaru && highlighted < 3) {
-          maruClass = "highlight";
-          highlighted++;
-        }
+     
+        if (isMaru) {countMaru++;
+maruUsers.push(id);}
+});
 
-        if (isMaru) countMaru++;
+ if (!ans.date1 && !comment) return;
+const maruClass = highlightedUsers.includes(id)? "highlight": "";
+const highlightedUsers=countMaru>=3 ? maruUsers.slice(0, 3) : [];
+tbody.innerHTML="";
+
 
         const row = `
           <tr>
@@ -350,18 +361,39 @@
 
 
 
-現行仕様
-<tr>＊定員到達時その旨が明示されるようにしました。</tr>
-<tr>＊現在対応してるのは一つの日程のみです。</tr>
-<tr>＊アカウント登録しただけでは回答者一覧に表示されないよう修正しました。</tr>
-<tr>＊最終更新時間を記録し、更新順になるように名簿を対応させました。</tr>
-<tr>＊リロードやコメントの変更だけでは順序が変わらないよう調整し、〇△×に変更があった場合のみ待機列を後ろに移動させる仕様に変更しました。</tr>
-<tr>＊スマホサイズに対応しました。</tr>
-<tr>＊参加可能な方/時間帯の枠を強調表示するようにしました。(現在の挙動：〇回答が早かった3名に赤表示)</tr>
+現行
+＊満員になったら表示されるようにしました。
+＊現在対応してるのは一つの日程のみです。
+＊アカウント登録しただけでは回答者一覧に表示されないよう修正しました。
+＊赤文字上に持ってくとこまでやりました。
+＊スマホサイズに対応しました。（PCのしゅっとした感じは消えました。まぁいいや）
+PC版（最初期）はheadを消去して、
+.container{
+max-width:700px;
+margin: auto;
+background: white;
+padding:20px;
+border-radius:10px;
+box-shadow: 0 0 10px #aaa;
+margin-bottom:30px;}
+
+table{
+width: 100%;
+border-collapse:collapse;
+margin-top:10px;}
+
+でした。備忘録。
+*赤背景まで対応しました。(現在の挙動：〇回答が早かった3名に赤表示)
+
+*最終更新時間を記録し、更新順になるように名簿を対応させました。
+＊リロードやコメントの変更だけでは順序が変わらないよう調整し、〇△×に変更があった場合のみ待機列を後ろに移動させる仕様としました。
 
 
 
 
-<tr>今後実装したい仕様</tr>
-<tr>＊複数日に対応</tr>
-<tr>＊満員になるまでは〇の枠も赤表示にはしない。</tr>
+今後実装したい仕様
+＊複数日に対応
+＊満員になるまでは〇の人も赤表示にはしない。
+
+
+
