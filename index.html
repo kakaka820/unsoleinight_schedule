@@ -1,67 +1,331 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>日程調整ページ</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>日程調整アンケート</title>
   <style>
     body {
       font-family: sans-serif;
-      background-color: #e0f0ff;
+      background-color: #f0f8ff;
       padding: 20px;
     }
-    .hidden {
-      display: none;
-    }
     .container {
-      max-width: 400px;
+      max-width: 800px;
       margin: auto;
       background: white;
       padding: 20px;
       border-radius: 10px;
       box-shadow: 0 0 10px #aaa;
+      margin-bottom: 30px;
+      overflow-x: auto;
     }
-  </style>
-</head>
-<body>
-  <div class="container" id="loginSection">
-    <h2>ログイン</h2>
-    <input type="text" id="userId" placeholder="ID"><br><br>
-    <input type="password" id="password" placeholder="パスワード"><br><br>
-    <button onclick="login()">ログイン</button>
-    <p id="loginError" style="color:red;"></p>
-  </div>
+    .hidden {
+      display: none;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      min-width: 600px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      text-align: center;
+      padding: 8px;
+    }
+    th {
+      background-color: #e0f0ff;
+    }
+    textarea {
+      width: 100%;
+      height: 60px;
+    }
+    .highlight {
+      background-color: #ffcccc;
+    }
+    #submitMessage {
+      color: green;
+    }
+    #loginError, #registerMessage {
+      color: red;
+    }
+    .fullMsg {
+      color: red;
+      font-weight: bold;
+    }
 
-  <div class="container hidden" id="formSection">
-    <h2>日程調整フォーム</h2>
-    <label>希望日:</label><br>
-    <input type="date" id="date"><br><br>
-    <label>備考:</label><br>
-    <textarea id="note" rows="3" cols="30"></textarea><br><br>
-    <button onclick="submitSchedule()">送信</button>
-    <p id="submitMessage" style="color:green;"></p>
-  </div>
-
-  <script>
-    const VALID_ID = "user01";
-    const VALID_PASS = "pass123";
-
-    function login() {
-      const id = document.getElementById("userId").value;
-      const pass = document.getElementById("password").value;
-
-      if (id === VALID_ID && pass === VALID_PASS) {
-        document.getElementById("loginSection").classList.add("hidden");
-        document.getElementById("formSection").classList.remove("hidden");
-      } else {
-        document.getElementById("loginError").textContent = "IDまたはパスワードが違います。";
+    @media (max-width: 600px) {
+      table, thead, tbody, th, td, tr {
+        font-size: 14px;
       }
     }
+  </style>
 
-    function submitSchedule() {
-      const date = document.getElementById("date").value;
-      const note = document.getElementById("note").value;
-      document.getElementById("submitMessage").textContent = `日程（${date}）が送信されました。備考: ${note}`;
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_BUCKET",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.users = {};
+    window.currentUser = "";
+
+    window.login = async function () {
+      const id = document.getElementById("userId").value.trim();
+      const pass = document.getElementById("password").value;
+      if (!id || !pass) {
+        document.getElementById("loginError").textContent = "IDとパスワードを入力してください。";
+        return;
+      }
+
+      try {
+        const docSnap = await getDoc(doc(db, "users", id));
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.password === pass) {
+            window.currentUser = id;
+            window.users[id] = data;
+            document.getElementById("loginSection").classList.add("hidden");
+            document.getElementById("formSection").classList.remove("hidden");
+            document.getElementById("resultSection").classList.remove("hidden");
+            document.getElementById("welcomeMsg").textContent = `${id} さんとしてログイン中`;
+            loadPreviousAnswers();
+            await showAllResults();
+            document.getElementById("loginError").textContent = "";
+            document.getElementById("submitMessage").textContent = "";
+          } else {
+            document.getElementById("loginError").textContent = "パスワードが違います。";
+          }
+        } else {
+          document.getElementById("loginError").textContent = "IDが存在しません。";
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById("loginError").textContent = "ログイン中にエラーが発生しました。";
+      }
+    };
+
+    window.register = async function () {
+      const id = document.getElementById("newUserId").value.trim();
+      const pass = document.getElementById("newPassword").value;
+      if (!id || !pass) {
+        document.getElementById("registerMessage").textContent = "IDとパスワードを入力してください。";
+        return;
+      }
+      if (/[<>]/.test(id)) {
+        document.getElementById("registerMessage").textContent = "IDに < や > を含めないでください。";
+        return;
+      }
+
+      const docSnap = await getDoc(doc(db, "users", id));
+      if (docSnap.exists()) {
+        document.getElementById("registerMessage").textContent = "このIDはすでに使われています。";
+      } else {
+        await setDoc(doc(db, "users", id), { password: pass, answers: {}, comment: "" });
+        document.getElementById("registerMessage").style.color = "green";
+        document.getElementById("registerMessage").textContent = "登録成功！ログイン画面に戻ってください。";
+      }
+    };
+
+    window.showRegister = () => {
+      document.getElementById("loginSection").classList.add("hidden");
+      document.getElementById("registerSection").classList.remove("hidden");
+    };
+
+    window.backToLogin = () => {
+      document.getElementById("registerSection").classList.add("hidden");
+      document.getElementById("loginSection").classList.remove("hidden");
+    };
+
+    function loadPreviousAnswers() {
+      const answers = window.users[window.currentUser]?.answers || {};
+      const comment = window.users[window.currentUser]?.comment || "";
+      ["date1", "date2", "date3"].forEach(name => {
+        if (answers[name]) {
+          const el = document.querySelector(`input[name="${name}"][value="${answers[name]}"]`);
+          if (el) el.checked = true;
+        }
+      });
+      document.getElementById("comment").value = comment;
     }
+
+    async function showAllResults() {
+      const tbody = document.getElementById("resultTable").querySelector("tbody");
+      tbody.innerHTML = "";
+      const fullMsgCells = { date1: [], date2: [], date3: [] };
+      const countMap = { date1: 0, date2: 0, date3: 0 };
+
+      const querySnapshot = await getDocs(collection(db, "users"));
+      const docsArray = [];
+
+      querySnapshot.forEach(docSnap => {
+        docsArray.push({ id: docSnap.id, data: docSnap.data() });
+      });
+
+      docsArray.sort((a, b) => {
+        const t1 = a.data.updatedAt?.toMillis() || 0;
+        const t2 = b.data.updatedAt?.toMillis() || 0;
+        return t1 - t2;
+      });
+
+      docsArray.forEach(({ id, data }) => {
+        const a = data.answers || {};
+        const answered = ["date1", "date2", "date3"].some(date => a[date]);
+        if (!answered) return;
+
+        window.users[id] = data;
+        ["date1", "date2", "date3"].forEach(date => {
+          if (a[date] === "〇") {
+            countMap[date]++;
+            fullMsgCells[date].push(id);
+          }
+        });
+      });
+
+      docsArray.forEach(({ id, data }) => {
+        const a = data.answers || {};
+        const comment = data.comment || "";
+        const answered = ["date1", "date2", "date3"].some(date => a[date]);
+        if (!answered) return;
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${id}</td>
+          <td class="${fullMsgCells.date1.includes(id) && countMap.date1 >= 3 ? 'highlight' : ''}">${a.date1 || ""}</td>
+          <td class="${fullMsgCells.date2.includes(id) && countMap.date2 >= 3 ? 'highlight' : ''}">${a.date2 || ""}</td>
+          <td class="${fullMsgCells.date3.includes(id) && countMap.date3 >= 3 ? 'highlight' : ''}">${a.date3 || ""}</td>
+          <td>${comment}</td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      ["date1", "date2", "date3"].forEach(date => {
+        const el = document.getElementById(`msg-${date}`);
+        if (countMap[date] >= 3) {
+          el.textContent = "※ この日は満席です。";
+        } else {
+          el.textContent = "";
+        }
+      });
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("scheduleForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!window.currentUser) {
+          alert("ログインしてください。");
+          return;
+        }
+
+        const answers = {};
+        ["date1", "date2", "date3"].forEach(date => {
+          answers[date] = document.querySelector(`input[name="${date}"]:checked`)?.value || "";
+        });
+
+        const comment = document.getElementById("comment").value;
+        const prevAnswers = window.users[window.currentUser]?.answers || {};
+
+        const updateData = {
+          password: window.users[window.currentUser].password,
+          answers: answers,
+          comment: comment,
+        };
+
+        if (JSON.stringify(answers) !== JSON.stringify(prevAnswers)) {
+          updateData.updatedAt = serverTimestamp();
+        }
+
+        await setDoc(doc(db, "users", window.currentUser), updateData);
+        window.users[window.currentUser] = { ...updateData };
+        document.getElementById("submitMessage").textContent = "回答を保存しました！";
+        await showAllResults();
+      });
+    });
   </script>
+</head>
+<body>
+
+<div class="container" id="loginSection">
+  <h2>ログイン</h2>
+  <input type="text" id="userId" placeholder="ID" /><br><br>
+  <input type="password" id="password" placeholder="パスワード" /><br><br>
+  <button onclick="login()">ログイン</button>
+  <button onclick="showRegister()">新規登録</button>
+  <p id="loginError"></p>
+</div>
+
+<div class="container hidden" id="registerSection">
+  <h2>新規アカウント作成</h2>
+  <input type="text" id="newUserId" placeholder="新しいID" /><br><br>
+  <input type="password" id="newPassword" placeholder="パスワード" /><br><br>
+  <button onclick="register()">登録</button>
+  <button onclick="backToLogin()">戻る</button>
+  <p id="registerMessage"></p>
+</div>
+
+<div class="container hidden" id="formSection">
+  <h2>日程調整アンケート</h2>
+  <p id="welcomeMsg"></p>
+  <form id="scheduleForm">
+    <table>
+      <thead>
+        <tr><th>日付</th><th>〇</th><th>△</th><th>✕</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>5月25日(土)</td>
+          <td><input type="radio" name="date1" value="〇" required></td>
+          <td><input type="radio" name="date1" value="△"></td>
+          <td><input type="radio" name="date1" value="✕"></td>
+        </tr>
+        <tr>
+          <td>5月26日(日)</td>
+          <td><input type="radio" name="date2" value="〇" required></td>
+          <td><input type="radio" name="date2" value="△"></td>
+          <td><input type="radio" name="date2" value="✕"></td>
+        </tr>
+        <tr>
+          <td>5月29日(水)</td>
+          <td><input type="radio" name="date3" value="〇" required></td>
+          <td><input type="radio" name="date3" value="△"></td>
+          <td><input type="radio" name="date3" value="✕"></td>
+        </tr>
+      </tbody>
+    </table>
+    <br>
+    <label>コメント（任意）:</label><br>
+    <textarea id="comment" placeholder="例：午後ならOKです！など"></textarea><br><br>
+    <button type="submit">送信・更新</button>
+    <p id="submitMessage"></p>
+  </form>
+</div>
+
+<div class="container hidden" id="resultSection">
+  <h2>全員の回答一覧</h2>
+  <p id="msg-date1" class="fullMsg"></p>
+  <p id="msg-date2" class="fullMsg"></p>
+  <p id="msg-date3" class="fullMsg"></p>
+  <div style="overflow-x: auto;">
+    <table id="resultTable">
+      <thead>
+        <tr><th>ID</th><th>5/25</th><th>5/26</th><th>5/29</th><th>コメント</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
 </body>
 </html>
+
