@@ -9,6 +9,7 @@
       font-family: sans-serif;
       background-color: #f0f8ff;
       padding: 20px;
+      margin: 0;
     }
     .container {
       max-width: 800px;
@@ -18,7 +19,6 @@
       border-radius: 10px;
       box-shadow: 0 0 10px #aaa;
       margin-bottom: 30px;
-      overflow-x: auto;
     }
     .hidden {
       display: none;
@@ -27,7 +27,6 @@
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
-      min-width: 600px;
     }
     th, td {
       border: 1px solid #ccc;
@@ -54,11 +53,31 @@
       color: red;
       font-weight: bold;
     }
-
-    @media (max-width: 600px) {
+    @media screen and (max-width: 600px) {
       table, thead, tbody, th, td, tr {
-        font-size: 14px;
+        display: block;
       }
+      thead {
+        display: none;
+      }
+      td {
+        position: relative;
+        padding-left: 50%;
+        text-align: left;
+      }
+      td::before {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        width: 45%;
+        white-space: nowrap;
+        font-weight: bold;
+      }
+      td:nth-of-type(1)::before { content: "ID"; }
+      td:nth-of-type(2)::before { content: "5/25"; }
+      td:nth-of-type(3)::before { content: "5/26"; }
+      td:nth-of-type(4)::before { content: "5/29"; }
+      td:nth-of-type(5)::before { content: "コメント"; }
     }
   </style>
 
@@ -66,7 +85,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
     import { getFirestore, doc, setDoc, getDoc, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
-      const firebaseConfig = {
+    const firebaseConfig = {
       apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
       authDomain: "unsoleinight-schedule.firebaseapp.com",
       projectId: "unsoleinight-schedule",
@@ -74,7 +93,6 @@
       messagingSenderId: "1040333692698",
       appId: "1:1040333692698:web:fb0e4f481dff8167f756a3"
     };
-
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -166,12 +184,15 @@
       tbody.innerHTML = "";
       const fullMsgCells = { date1: [], date2: [], date3: [] };
       const countMap = { date1: 0, date2: 0, date3: 0 };
+      let anyFull = false;
 
       const querySnapshot = await getDocs(collection(db, "users"));
       const docsArray = [];
 
       querySnapshot.forEach(docSnap => {
-        docsArray.push({ id: docSnap.id, data: docSnap.data() });
+        const data = docSnap.data();
+        const hasAnswered = Object.values(data.answers || {}).some(v => v);
+        if (hasAnswered) docsArray.push({ id: docSnap.id, data });
       });
 
       docsArray.sort((a, b) => {
@@ -181,11 +202,8 @@
       });
 
       docsArray.forEach(({ id, data }) => {
-        const a = data.answers || {};
-        const answered = ["date1", "date2", "date3"].some(date => a[date]);
-        if (!answered) return;
-
         window.users[id] = data;
+        const a = data.answers || {};
         ["date1", "date2", "date3"].forEach(date => {
           if (a[date] === "〇") {
             countMap[date]++;
@@ -194,11 +212,11 @@
         });
       });
 
+      anyFull = ["date1", "date2", "date3"].some(date => countMap[date] >= 3);
+
       docsArray.forEach(({ id, data }) => {
         const a = data.answers || {};
         const comment = data.comment || "";
-        const answered = ["date1", "date2", "date3"].some(date => a[date]);
-        if (!answered) return;
 
         const row = document.createElement("tr");
         row.innerHTML = `
@@ -211,14 +229,7 @@
         tbody.appendChild(row);
       });
 
-      ["date1", "date2", "date3"].forEach(date => {
-        const el = document.getElementById(`msg-${date}`);
-        if (countMap[date] >= 3) {
-          el.textContent = "※ この日は満席です。";
-        } else {
-          el.textContent = "";
-        }
-      });
+      document.getElementById("msg-full").textContent = anyFull ? "※ いずれかの日程はすでに満席です。" : "";
     }
 
     window.addEventListener("DOMContentLoaded", () => {
@@ -282,50 +293,3 @@
     <table>
       <thead>
         <tr><th>日付</th><th>〇</th><th>△</th><th>✕</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>5月25日(土)</td>
-          <td><input type="radio" name="date1" value="〇" required></td>
-          <td><input type="radio" name="date1" value="△"></td>
-          <td><input type="radio" name="date1" value="✕"></td>
-        </tr>
-        <tr>
-          <td>5月26日(日)</td>
-          <td><input type="radio" name="date2" value="〇" required></td>
-          <td><input type="radio" name="date2" value="△"></td>
-          <td><input type="radio" name="date2" value="✕"></td>
-        </tr>
-        <tr>
-          <td>5月29日(水)</td>
-          <td><input type="radio" name="date3" value="〇" required></td>
-          <td><input type="radio" name="date3" value="△"></td>
-          <td><input type="radio" name="date3" value="✕"></td>
-        </tr>
-      </tbody>
-    </table>
-    <br>
-    <label>コメント（任意）:</label><br>
-    <textarea id="comment" placeholder="例：午後ならOKです！など"></textarea><br><br>
-    <button type="submit">送信・更新</button>
-    <p id="submitMessage"></p>
-  </form>
-</div>
-
-<div class="container hidden" id="resultSection">
-  <h2>全員の回答一覧</h2>
-  <p id="msg-date1" class="fullMsg"></p>
-  <p id="msg-date2" class="fullMsg"></p>
-  <p id="msg-date3" class="fullMsg"></p>
-  <div style="overflow-x: auto;">
-    <table id="resultTable">
-      <thead>
-        <tr><th>ID</th><th>5/25</th><th>5/26</th><th>5/29</th><th>コメント</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-</div>
-
-</body>
-</html>
