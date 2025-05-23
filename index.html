@@ -2,237 +2,314 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>日程調整アプリ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>日程調整アンケート</title>
   <style>
-    body { font-family: sans-serif; padding: 1rem; }
-    .full { color: red; font-weight: bold; }
-    .result { margin-top: 2rem; }
-    .user-block { border-top: 1px solid #ccc; margin-top: 1rem; padding-top: 0.5rem; }
+    body {
+      font-family: sans-serif;
+      background-color: #f0f8ff;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #aaa;
+      margin-bottom: 30px;
+    }
+    .hidden {
+      display: none;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      text-align: center;
+      padding: 8px;
+    }
+    th {
+      background-color: #e0f0ff;
+    }
+    textarea {
+      width: 100%;
+      height: 60px;
+    }
+    .highlight {
+      background-color: #ffcccc;
+    }
+    #submitMessage {
+      color: green;
+    }
+    #loginError, #registerMessage {
+      color: red;
+    }
+    .fullMsg {
+      color: red;
+      font-weight: bold;
+    }
   </style>
-</head>
-<body>
-  <h1>日程調整アプリ</h1>
-
-  <div>
-    <label>日程を選んでください:
-      <select id="scheduleSelect">
-        <option value="schedule1">日程A</option>
-        <option value="schedule2">日程B</option>
-        <option value="schedule3">日程C</option>
-      </select>
-    </label>
-  </div>
-
-  <div>
-    <label>ID: <input type="text" id="userId" /></label><br/>
-    <label>パスワード: <input type="password" id="password" /></label>
-    <button id="loginBtn">ログイン</button>
-    <button id="logoutBtn" disabled>ログアウト</button>
-  </div>
-
-  <div id="answerArea" style="display: none;">
-    <h2>出欠入力</h2>
-    <form id="answerForm">
-      <label>日程A: 
-        <select name="schedule1">
-          <option value="">未選択</option>
-          <option value="○">○</option>
-          <option value="×">×</option>
-          <option value="△">△</option>
-        </select>
-      </label><br/>
-      <label>日程B: 
-        <select name="schedule2">
-          <option value="">未選択</option>
-          <option value="○">○</option>
-          <option value="×">×</option>
-          <option value="△">△</option>
-        </select>
-      </label><br/>
-      <label>日程C: 
-        <select name="schedule3">
-          <option value="">未選択</option>
-          <option value="○">○</option>
-          <option value="×">×</option>
-          <option value="△">△</option>
-        </select>
-      </label><br/>
-      <label>コメント:<br/>
-        <textarea name="comment" rows="3" cols="40"></textarea>
-      </label><br/>
-      <button type="submit">送信</button>
-    </form>
-    <p id="submitMessage"></p>
-  </div>
-
-  <div class="result">
-    <h2>みんなの回答</h2>
-    <div id="resultList"></div>
-  </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import {
-      getFirestore, doc, setDoc, getDoc, getDocs, collection,
-      serverTimestamp, query, orderBy
-    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
-    import {
-      getAuth, signInWithEmailAndPassword, signOut
-    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
     const firebaseConfig = {
-      // 🔐 ← 自分のFirebase構成に置き換えてください
       apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
-    authDomain: "unsoleinight-schedule.firebaseapp.com",
-    projectId: "unsoleinight-schedule",
-    storageBucket: "unsoleinight-schedule.appspot.com",
-    messagingSenderId: "1040333692698",
-    appId: "1:1040333692698:web:fb0e4f481dff8167f756a3"
-
+      authDomain: "unsoleinight-schedule.firebaseapp.com",
+      projectId: "unsoleinight-schedule",
+      storageBucket: "unsoleinight-schedule.appspot.com",
+      messagingSenderId: "1040333692698",
+      appId: "1:1040333692698:web:fb0e4f481dff8167f756a3"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const auth = getAuth(app);
 
-    const scheduleSelect = document.getElementById("scheduleSelect");
-    const loginBtn = document.getElementById("loginBtn");
-    const logoutBtn = document.getElementById("logoutBtn");
-    const userIdInput = document.getElementById("userId");
-    const passwordInput = document.getElementById("password");
-    const answerArea = document.getElementById("answerArea");
-    const answerForm = document.getElementById("answerForm");
-    const resultList = document.getElementById("resultList");
-    const submitMessage = document.getElementById("submitMessage");
+    window.users = {};
+    window.currentUser = "";
 
-    let currentSchedule = scheduleSelect.value;
-    let currentUser = null;
-
-    const users = {};  // キャッシュ
-
-    async function loadAnswers() {
-      const snapshot = await getDocs(query(collection(db, "users"), orderBy("updatedAt", "desc")));
-      snapshot.forEach(doc => {
-        users[doc.id] = doc.data();
-      });
-    }
-
-    function renderResults() {
-      resultList.innerHTML = "";
-
-      const counts = { schedule1: 0, schedule2: 0, schedule3: 0 };
-
-      Object.entries(users).forEach(([id, data]) => {
-        const div = document.createElement("div");
-        div.className = "user-block";
-        div.innerHTML = `
-          <strong>${id}</strong><br/>
-          A: ${data.answers?.schedule1 || "未"} / 
-          B: ${data.answers?.schedule2 || "未"} / 
-          C: ${data.answers?.schedule3 || "未"}<br/>
-          コメント: ${data.comment || ""}<br/>
-        `;
-        resultList.appendChild(div);
-
-        for (const key of ["schedule1", "schedule2", "schedule3"]) {
-          if (data.answers?.[key] === "○") counts[key]++;
-        }
-      });
-
-      for (const key of ["schedule1", "schedule2", "schedule3"]) {
-        if (counts[key] >= 3) {
-          const fullMsg = document.createElement("p");
-          fullMsg.className = "full";
-          fullMsg.textContent = `${key} は満席です！`;
-          resultList.insertBefore(fullMsg, resultList.firstChild);
-        }
+    window.login = async function() {
+      const id = document.getElementById("userId").value.trim();
+      const pass = document.getElementById("password").value;
+      if (!id || !pass) {
+        document.getElementById("loginError").textContent = "IDとパスワードを入力してください。";
+        return;
       }
+
+      try {
+        const docSnap = await getDoc(doc(db, "users", id));
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.password === pass) {
+            window.currentUser = id;
+            window.users[id] = data;
+            document.getElementById("loginSection").classList.add("hidden");
+            document.getElementById("formSection").classList.remove("hidden");
+            document.getElementById("resultSection").classList.remove("hidden");
+            document.getElementById("welcomeMsg").textContent = `${id} さんとしてログイン中`;
+            loadPreviousAnswers();
+            await showAllResults();
+            document.getElementById("loginError").textContent = "";
+            document.getElementById("submitMessage").textContent = "";
+          } else {
+            document.getElementById("loginError").textContent = "パスワードが違います。";
+          }
+        } else {
+          document.getElementById("loginError").textContent = "IDが存在しません。";
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById("loginError").textContent = "ログイン中にエラーが発生しました。";
+      }
+    };
+
+    window.register = async function() {
+      const id = document.getElementById("newUserId").value.trim();
+      const pass = document.getElementById("newPassword").value;
+      if (!id || !pass) {
+        document.getElementById("registerMessage").textContent = "IDとパスワードを入力してください。";
+        return;
+      }
+      if (/[<>]/.test(id)) {
+        document.getElementById("registerMessage").textContent = "IDに < や > を含めないでください。";
+        return;
+      }
+
+      const docSnap = await getDoc(doc(db, "users", id));
+      if (docSnap.exists()) {
+        document.getElementById("registerMessage").textContent = "このIDはすでに使われています。";
+      } else {
+        await setDoc(doc(db, "users", id), { password: pass, answers: {}, comment: "" });
+        document.getElementById("registerMessage").style.color = "green";
+        document.getElementById("registerMessage").textContent = "登録成功！ログイン画面に戻ってください。";
+      }
+    };
+
+    window.showRegister = () => {
+      document.getElementById("loginSection").classList.add("hidden");
+      document.getElementById("registerSection").classList.remove("hidden");
+    };
+
+    window.backToLogin = () => {
+      document.getElementById("registerSection").classList.add("hidden");
+      document.getElementById("loginSection").classList.remove("hidden");
+    };
+
+    function loadPreviousAnswers() {
+      const answers = window.users[window.currentUser]?.answers || {};
+      const comment = window.users[window.currentUser]?.comment || "";
+      ["date1", "date2", "date3"].forEach(name => {
+        if (answers[name]) {
+          const el = document.querySelector(`input[name="${name}"][value="${answers[name]}"]`);
+          if (el) el.checked = true;
+        }
+      });
+      document.getElementById("comment").value = comment;
     }
 
     async function showAllResults() {
-      await loadAnswers();
-      renderResults();
+      const tbody = document.getElementById("resultTable").querySelector("tbody");
+      tbody.innerHTML = "";
+      const fullMsgCells = { date1: [], date2: [], date3: [] };
+      const countMap = { date1: 0, date2: 0, date3: 0 };
+
+      const querySnapshot = await getDocs(collection(db, "users"));
+      const docsArray = [];
+
+      querySnapshot.forEach(docSnap => {
+        docsArray.push({ id: docSnap.id, data: docSnap.data() });
+      });
+
+      docsArray.sort((a, b) => {
+        const t1 = a.data.updatedAt?.toMillis() || 0;
+        const t2 = b.data.updatedAt?.toMillis() || 0;
+        return t1 - t2;
+      });
+
+      docsArray.forEach(({ id, data }) => {
+        window.users[id] = data;
+        const a = data.answers || {};
+        ["date1", "date2", "date3"].forEach(date => {
+          if (a[date] === "〇") {
+            countMap[date]++;
+            fullMsgCells[date].push(id);
+          }
+        });
+      });
+
+      docsArray.forEach(({ id, data }) => {
+        const a = data.answers || {};
+        const comment = data.comment || "";
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${id}</td>
+          <td class="${fullMsgCells.date1.includes(id) && countMap.date1 >= 3 ? 'highlight' : ''}">${a.date1 || ""}</td>
+          <td class="${fullMsgCells.date2.includes(id) && countMap.date2 >= 3 ? 'highlight' : ''}">${a.date2 || ""}</td>
+          <td class="${fullMsgCells.date3.includes(id) && countMap.date3 >= 3 ? 'highlight' : ''}">${a.date3 || ""}</td>
+          <td>${comment}</td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      ["date1", "date2", "date3"].forEach(date => {
+        const el = document.getElementById(`msg-${date}`);
+        if (countMap[date] >= 3) {
+          el.textContent = "※ この日は満席です。";
+        } else {
+          el.textContent = "";
+        }
+      });
     }
 
-    loginBtn.addEventListener("click", async () => {
-      const id = userIdInput.value.trim();
-      const pw = passwordInput.value;
+    window.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("scheduleForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!window.currentUser) {
+          alert("ログインしてください。");
+          return;
+        }
 
-      if (!id || !pw) {
-        alert("IDとパスワードを入力してください");
-        return;
-      }
+        const answers = {};
+        ["date1", "date2", "date3"].forEach(date => {
+          answers[date] = document.querySelector(`input[name="${date}"]:checked`)?.value || "";
+        });
 
-      if (id.includes("<") || id.includes(">")) {
-        alert("IDに < または > を含めないでください");
-        return;
-      }
+        const comment = document.getElementById("comment").value;
+        const prevAnswers = window.users[window.currentUser]?.answers || {};
 
-      try {
-        const email = `${id}@example.com`;
-        await signInWithEmailAndPassword(auth, email, pw);
-        currentUser = id;
-        answerArea.style.display = "block";
-        loginBtn.disabled = true;
-        logoutBtn.disabled = false;
+        const updateData = {
+          password: window.users[window.currentUser].password,
+          answers: answers,
+          comment: comment,
+        };
+
+        if (JSON.stringify(answers) !== JSON.stringify(prevAnswers)) {
+          updateData.updatedAt = serverTimestamp();
+        }
+
+        await setDoc(doc(db, "users", window.currentUser), updateData);
+        window.users[window.currentUser] = { ...updateData };
+        document.getElementById("submitMessage").textContent = "回答を保存しました！";
         await showAllResults();
-      } catch (err) {
-        alert("ログイン失敗: " + err.message);
-      }
+      });
     });
-
-    logoutBtn.addEventListener("click", async () => {
-      await signOut(auth);
-      currentUser = null;
-      loginBtn.disabled = false;
-      logoutBtn.disabled = true;
-      answerArea.style.display = "none";
-      submitMessage.textContent = "";
-    });
-
-    scheduleSelect.addEventListener("change", () => {
-      currentSchedule = scheduleSelect.value;
-      answerForm.reset(); // 回答をリセット
-      submitMessage.textContent = "";
-    });
-
-    answerForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      if (!currentUser) {
-        alert("ログインしてください");
-        return;
-      }
-
-      const formData = new FormData(answerForm);
-      const answers = {
-        schedule1: formData.get("schedule1"),
-        schedule2: formData.get("schedule2"),
-        schedule3: formData.get("schedule3"),
-      };
-
-      const comment = formData.get("comment");
-
-      const updateData = {
-        answers,
-        comment,
-        updatedAt: serverTimestamp()
-      };
-
-      try {
-        await setDoc(doc(db, "users", currentUser), updateData, { merge: true });
-        users[currentUser] = updateData;
-        submitMessage.textContent = "回答を保存しました！";
-        await showAllResults();
-      } catch (error) {
-        console.error("送信エラー:", error);
-        submitMessage.textContent = "送信に失敗しました。";
-      }
-    });
-
-    // 初期表示
-    showAllResults();
   </script>
+</head>
+<body>
+
+<div class="container" id="loginSection">
+  <h2>ログイン</h2>
+  <input type="text" id="userId" placeholder="ID" /><br><br>
+  <input type="password" id="password" placeholder="パスワード" /><br><br>
+  <button onclick="login()">ログイン</button>
+  <button onclick="showRegister()">新規登録</button>
+  <p id="loginError"></p>
+</div>
+
+<div class="container hidden" id="registerSection">
+  <h2>新規アカウント作成</h2>
+  <input type="text" id="newUserId" placeholder="新しいID" /><br><br>
+  <input type="password" id="newPassword" placeholder="パスワード" /><br><br>
+  <button onclick="register()">登録</button>
+  <button onclick="backToLogin()">戻る</button>
+  <p id="registerMessage"></p>
+</div>
+
+<div class="container hidden" id="formSection">
+  <h2>日程調整アンケート</h2>
+  <p id="welcomeMsg"></p>
+  <form id="scheduleForm">
+    <table>
+      <thead>
+        <tr><th>日付</th><th>〇</th><th>△</th><th>✕</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>5月25日(土)</td>
+          <td><input type="radio" name="date1" value="〇" required></td>
+          <td><input type="radio" name="date1" value="△"></td>
+          <td><input type="radio" name="date1" value="✕"></td>
+        </tr>
+        <tr>
+          <td>5月26日(日)</td>
+          <td><input type="radio" name="date2" value="〇" required></td>
+          <td><input type="radio" name="date2" value="△"></td>
+          <td><input type="radio" name="date2" value="✕"></td>
+        </tr>
+        <tr>
+          <td>5月29日(水)</td>
+          <td><input type="radio" name="date3" value="〇" required></td>
+          <td><input type="radio" name="date3" value="△"></td>
+          <td><input type="radio" name="date3" value="✕"></td>
+        </tr>
+      </tbody>
+    </table>
+    <br>
+    <label>コメント（任意）:</label><br>
+    <textarea id="comment" placeholder="例：午後ならOKです！など"></textarea><br><br>
+    <button type="submit">送信・更新</button>
+    <p id="submitMessage"></p>
+  </form>
+</div>
+
+<div class="container hidden" id="resultSection">
+  <h2>全員の回答一覧</h2>
+  <p id="msg-date1" class="fullMsg"></p>
+  <p id="msg-date2" class="fullMsg"></p>
+  <p id="msg-date3" class="fullMsg"></p>
+  <table id="resultTable">
+    <thead>
+      <tr><th>ID</th><th>5/25</th><th>5/26</th><th>5/29</th><th>コメント</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
 </body>
 </html>
-
