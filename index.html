@@ -293,3 +293,46 @@
     <table>
       <thead>
         <tr><th>日付</th><th>〇</th><th>△</th><th>✕</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>5月25日(土)</td>
+          <td><input type="radio" name="date1" value="〇" required></td>
+          <td><input type="radio" name="date1" value="△"></td>
+          <td><input type="radio" name="date1" value="✕"></td>
+        </tr>
+        <tr>
+          <td>5月26日(日)</td>
+          <td><input type="radio" name="date2" value="〇" required></td>
+          <td><input type="radio" name="date2" value="△"></td>
+          <td><input type="radio" name="date2" value="✕"></td>
+        </tr>
+        <tr>
+          <td>5月29日(水)</td>
+          <td><input type="radio" name="date3" value="〇" required></td>
+          <td><input type="radio" name="date3" value="△"></td>
+          <td><input type="radio" name="date3" value="✕"></td>
+        </tr>
+      </tbody>
+    </table>
+    <br>
+    <label>コメント（任意）:</label><br>
+    <textarea id="comment" placeholder="例：午後ならOKです！など"></textarea><br><br>
+    <button type="submit">送信・更新</button>
+    <p id="submitMessage"></p>
+  </form>
+</div>
+
+<div class="container hidden" id="resultSection">
+  <h2>全員の回答一覧</h2>
+  <p id="msg-full" class="fullMsg"></p>
+  <table id="resultTable">
+    <thead>
+      <tr><th>ID</th><th>5/25</th><th>5/26</th><th>5/29</th><th>コメント</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+</body>
+</html>
