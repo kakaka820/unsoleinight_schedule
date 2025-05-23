@@ -1,363 +1,67 @@
-
-
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>日程調整アンケート</title>
-<style>
-  body {
-    font-family: sans-serif;
-    background-color: #f0f8ff;
-    padding: 20px;
-  }
-  .container {
-    max-width: 700px;
-    margin: auto;
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px #aaa;
-    margin-bottom: 30px;
-  }
-  .hidden {
-    display: none;
-  }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-  }
-  th, td {
-    border: 1px solid #ccc;
-    text-align: center;
-    padding: 8px;
-  }
-  th {
-    background-color: #e0f0ff;
-  }
-  textarea {
-    width: 100%;
-    height: 60px;
-  }
-  .highlight {
-    background-color: #ffcccc;
-  }
-  #submitMessage {
-    color: green;
-  }
-  #loginError, #registerMessage {
-    color: red;
-  }
-</style>
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-  import { getFirestore, doc, setDoc, getDoc, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
-    authDomain: "unsoleinight-schedule.firebaseapp.com",
-    projectId: "unsoleinight-schedule",
-    storageBucket: "unsoleinight-schedule.appspot.com",
-    messagingSenderId: "1040333692698",
-    appId: "1:1040333692698:web:fb0e4f481dff8167f756a3"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  window.users = {};
-  window.currentUser = "";
-
-  window.login = async function() {
-    const id = document.getElementById("userId").value.trim();
-    const pass = document.getElementById("password").value;
-
-    if (!id || !pass) {
-      document.getElementById("loginError").textContent = "IDとパスワードを入力してください。";
-      return;
+  <meta charset="UTF-8">
+  <title>日程調整ページ</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #e0f0ff;
+      padding: 20px;
     }
-
-    try {
-      const docSnap = await getDoc(doc(db, "users", id));
-      if (docSnap.exists()) {
-        const userData = docSnap.data();
-        if (userData.password === pass) {
-          window.currentUser = id;
-          window.users[id] = userData;
-          document.getElementById("loginSection").classList.add("hidden");
-          document.getElementById("formSection").classList.remove("hidden");
-          document.getElementById("resultSection").classList.remove("hidden");
-          document.getElementById("welcomeMsg").textContent = `${id} さんとしてログイン中`;
-          loadPreviousAnswers();
-          await showAllResults();
-          document.getElementById("loginError").textContent = "";
-          document.getElementById("submitMessage").textContent = "";
-        } else {
-          document.getElementById("loginError").textContent = "パスワードが違います。";
-        }
-      } else {
-        document.getElementById("loginError").textContent = "IDが存在しません。";
-      }
-    } catch (error) {
-      console.error(error);
-      document.getElementById("loginError").textContent = "ログイン中にエラーが発生しました。";
+    .hidden {
+      display: none;
     }
-  };
-
-  window.register = async function() {
-    const newId = document.getElementById("newUserId").value.trim();
-    const newPass = document.getElementById("newPassword").value;
-
-    if (!newId || !newPass) {
-      document.getElementById("registerMessage").style.color = "red";
-      document.getElementById("registerMessage").textContent = "IDとパスワードを入力してください。";
-      return;
+    .container {
+      max-width: 400px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #aaa;
     }
-
-    if (/[<>]/.test(newId)) {
-      document.getElementById("registerMessage").style.color = "red";
-      document.getElementById("registerMessage").textContent = "IDに < や > を含めないでください。";
-      return;
-    }
-
-    try {
-      const docSnap = await getDoc(doc(db, "users", newId));
-      if (docSnap.exists()) {
-        document.getElementById("registerMessage").style.color = "red";
-        document.getElementById("registerMessage").textContent = "このIDはすでに使われています。";
-      } else {
-        await setDoc(doc(db, "users", newId), {
-          password: newPass,
-          answers: {},
-          comment: ""
-        });
-        document.getElementById("registerMessage").style.color = "green";
-        document.getElementById("registerMessage").textContent = "登録成功！ログイン画面に戻ってください。";
-      }
-    } catch (error) {
-      console.error(error);
-      document.getElementById("registerMessage").style.color = "red";
-      document.getElementById("registerMessage").textContent = "登録に失敗しました。";
-    }
-  };
-
-  window.showRegister = function() {
-    document.getElementById("loginSection").classList.add("hidden");
-    document.getElementById("registerSection").classList.remove("hidden");
-    document.getElementById("registerMessage").textContent = "";
-  };
-
-  window.backToLogin = function() {
-    document.getElementById("registerSection").classList.add("hidden");
-    document.getElementById("loginSection").classList.remove("hidden");
-    document.getElementById("registerMessage").textContent = "";
-    document.getElementById("loginError").textContent = "";
-  };
-
-  window.loadPreviousAnswers = function() {
-    const answers = window.users[window.currentUser]?.answers || {};
-    const comment = window.users[window.currentUser]?.comment || "";
-
-    if (answers.date1) {
-      const el = document.querySelector(`input[name="date1"][value="${answers.date1}"]`);
-      if (el) el.checked = true;
-    } else {
-      // 未選択の場合、ラジオのチェックを外す
-      document.querySelectorAll('input[name="date1"]').forEach(input => input.checked = false);
-    }
-
-    document.getElementById("comment").value = comment;
-  };
-
-  window.showAllResults = async function() {
-  const tbody = document.getElementById("resultTable").querySelector("tbody");
-  const status = document.getElementById("maruStatusResult");
-  tbody.innerHTML = "";
-  status.textContent = "";
-
-  let countMaru = 0;
-  const maruUsers = [];
-
-  try {
-    const docsArray = [];
-    const querySnapshot = await getDocs(collection(db, "users"));
-    querySnapshot.forEach(docSnap => {
-      docsArray.push({ id: docSnap.id, data: docSnap.data() });
-    });
-
-    // ソート：更新日時がある順に
-    docsArray.sort((a, b) => {
-      const t1 = a.data.updatedAt ? a.data.updatedAt.toMillis() : 0;
-      const t2 = b.data.updatedAt ? b.data.updatedAt.toMillis() : 0;
-      return t1 - t2;
-    });
-
-    window.users = {};
-
-    docsArray.forEach(({ id, data }) => {
-      window.users[id] = data;
-      const ans = data.answers || {};
-      const comment = data.comment || "";
-
-      if (ans.date1 === "〇") {
-        countMaru++;
-        maruUsers.push(id);
-      }
-    });
-
-    const highlightedUsers = countMaru >= 3 ? maruUsers.slice(0, 3) : [];
-
-    // 表を再描画
-    docsArray.forEach(({ id, data }) => {
-      const ans = data.answers || {};
-      const comment = data.comment || "";
-
-      if (!ans.date1 && !comment) return;
-
-      const maruClass = highlightedUsers.includes(id) ? "highlight" : "";
-
-      const row = `
-        <tr>
-          <td>${id}</td>
-          <td class="${maruClass}">${ans.date1 || ""}</td>
-          <td>${comment}</td>
-        </tr>
-      `;
-      tbody.innerHTML += row;
-    });
-
-    if (countMaru >= 3) {
-      status.textContent = "※ この会はすでに満席となりました。以降は観戦/リザーバー枠での参加を募集いたします。";
-      status.style.color = "red";
-    } else {
-      status.textContent = "";
-    }
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-
-  window.addEventListener("DOMContentLoaded", () => {
-    const scheduleForm = document.getElementById("scheduleForm");
-    scheduleForm.addEventListener("submit", async function(e) {
-      e.preventDefault();
-
-      if (!window.currentUser) {
-        alert("ログインしてください。");
-        return;
-      }
-
-      const result1 = document.querySelector('input[name="date1"]:checked')?.value || "";
-      const comment = document.getElementById("comment").value;
-
-      const prevAnswers = window.users[window.currentUser]?.answers || {};
-      const prevDate1 = prevAnswers.date1 || "";
-
-      const updateData = {
-        password: window.users[window.currentUser].password,
-        answers: { date1: result1 },
-        comment: comment,
-      };
-
-      if (result1 !== prevDate1) {
-        updateData.updatedAt = serverTimestamp();
-      }
-
-      try {
-        await setDoc(doc(db, "users", window.currentUser), updateData);
-
-        window.users[window.currentUser].answers = { date1: result1 };
-        window.users[window.currentUser].comment = comment;
-
-        document.getElementById("submitMessage").textContent = "回答を保存しました！";
-        await showAllResults();
-      } catch (error) {
-        console.error(error);
-        document.getElementById("submitMessage").textContent = "保存に失敗しました。";
-      }
-    });
-  });
-</script>
+  </style>
 </head>
 <body>
+  <div class="container" id="loginSection">
+    <h2>ログイン</h2>
+    <input type="text" id="userId" placeholder="ID"><br><br>
+    <input type="password" id="password" placeholder="パスワード"><br><br>
+    <button onclick="login()">ログイン</button>
+    <p id="loginError" style="color:red;"></p>
+  </div>
 
-<div class="container" id="loginSection">
-  <h2>ログイン</h2>
-  <input type="text" id="userId" placeholder="ID" /><br /><br />
-  <input type="password" id="password" placeholder="パスワード" /><br /><br />
-  <button onclick="login()">ログイン</button>
-  <button onclick="showRegister()">新規登録</button>
-  <p id="loginError"></p>
-</div>
-
-<div class="container hidden" id="registerSection">
-  <h2>新規アカウント作成</h2>
-  <input type="text" id="newUserId" placeholder="新しいID" /><br /><br />
-  <input type="password" id="newPassword" placeholder="パスワード" /><br /><br />
-  <button onclick="register()">登録</button>
-  <button onclick="backToLogin()">戻る</button>
-  <p id="registerMessage"></p>
-</div>
-
-<div class="container hidden" id="formSection">
-  <h2>日程調整アンケート</h2>
-  <p id="welcomeMsg"></p>
-  <p id="maruStatusResult" style="margin-top: 5px;"></p>
-<p id="maruStatus" style="margin-top: 5px;"></p>
-  <form id="scheduleForm">
-    <table>
-      <thead>
-        <tr>
-          <th>日付</th>
-          <th>〇</th>
-          <th>△</th>
-          <th>✕</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>5/30(金)19:00～24:00</td>
-          <td><input type="radio" name="date1" value="〇" required /></td>
-          <td><input type="radio" name="date1" value="△" /></td>
-          <td><input type="radio" name="date1" value="✕" /></td>
-        </tr>
-      </tbody>
-    </table>
-    <br />
-    <label for="comment">コメント（任意）:</label><br />
-    <textarea id="comment" placeholder="例：午後ならOKです！など"></textarea><br /><br />
-    <button type="submit">送信・更新</button>
+  <div class="container hidden" id="formSection">
+    <h2>日程調整フォーム</h2>
+    <label>希望日:</label><br>
+    <input type="date" id="date"><br><br>
+    <label>備考:</label><br>
+    <textarea id="note" rows="3" cols="30"></textarea><br><br>
+    <button onclick="submitSchedule()">送信</button>
     <p id="submitMessage" style="color:green;"></p>
-  </form>
-</div>
+  </div>
 
-<div class="container hidden" id="resultSection">
-  <h2>全参加者の回答一覧</h2>
-  <table id="resultTable">
-    <thead>
-      <tr>
-        <th>参加者ID</th>
-        <th>参加可否</th>
-        <th>コメント</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- ここに結果が入る -->
-    </tbody>
-  </table>
+  <script>
+    const VALID_ID = "user01";
+    const VALID_PASS = "pass123";
 
-</div>
+    function login() {
+      const id = document.getElementById("userId").value;
+      const pass = document.getElementById("password").value;
 
+      if (id === VALID_ID && pass === VALID_PASS) {
+        document.getElementById("loginSection").classList.add("hidden");
+        document.getElementById("formSection").classList.remove("hidden");
+      } else {
+        document.getElementById("loginError").textContent = "IDまたはパスワードが違います。";
+      }
+    }
+
+    function submitSchedule() {
+      const date = document.getElementById("date").value;
+      const note = document.getElementById("note").value;
+      document.getElementById("submitMessage").textContent = `日程（${date}）が送信されました。備考: ${note}`;
+    }
+  </script>
 </body>
 </html>
-
-
-
-現行
-スマホ対応済/規定人数に到達した時の強調表示実装
-
-今後の改善案→複数日対応
