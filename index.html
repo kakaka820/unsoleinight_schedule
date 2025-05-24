@@ -209,12 +209,15 @@ window.showAllResults = async function() {
       const maruClass = highlightedUsers.includes(id) ? "highlight" : "";
 
       const row = `
-        <tr>
-          <td>${id}</td>
-          <td class="${maruClass}">${ans.date1 || ""}</td>
-          <td>${comment}</td>
-        </tr>
-      `;
+  <tr>
+    <td>${id}</td>
+    <td class="${ans.date1 === '〇' ? 'highlight' : ''}">${ans.date1 || ""}</td>
+    <td class="${ans.date2 === '〇' ? 'highlight' : ''}">${ans.date2 || ""}</td>
+    <td class="${ans.date3 === '〇' ? 'highlight' : ''}">${ans.date3 || ""}</td>
+    <td>${comment}</td>
+  </tr>
+`;
+
       tbody.innerHTML += row;
     });
 
