@@ -54,7 +54,6 @@
       color: red;
       font-weight: bold;
     }
-
     @media (max-width: 600px) {
       table, thead, tbody, th, td, tr {
         font-size: 14px;
@@ -66,7 +65,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
     import { getFirestore, doc, setDoc, getDoc, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
-      const firebaseConfig = {
+    const firebaseConfig = {
       apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
       authDomain: "unsoleinight-schedule.firebaseapp.com",
       projectId: "unsoleinight-schedule",
@@ -74,7 +73,6 @@
       messagingSenderId: "1040333692698",
       appId: "1:1040333692698:web:fb0e4f481dff8167f756a3"
     };
-
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -161,77 +159,64 @@
       document.getElementById("comment").value = comment;
     }
 
-window.showAllResults = async function() {
-  const tbody = document.getElementById("resultTable").querySelector("tbody");
-  const status = document.getElementById("maruStatusResult");
-  tbody.innerHTML = "";
-  status.textContent = "";
+    window.showAllResults = async function () {
+      const tbody = document.getElementById("resultTable").querySelector("tbody");
+      tbody.innerHTML = "";
 
-  let countMaru = 0;
-  const maruUsers = [];
+      const maruCounts = { date1: 0, date2: 0, date3: 0 };
+      const maruUsersByDate = { date1: [], date2: [], date3: [] };
 
-  try {
-    const docsArray = [];
-    const querySnapshot = await getDocs(collection(db, "users"));
-    querySnapshot.forEach(docSnap => {
-      docsArray.push({ id: docSnap.id, data: docSnap.data() });
-    });
+      try {
+        const docsArray = [];
+        const querySnapshot = await getDocs(collection(db, "users"));
+        querySnapshot.forEach(docSnap => {
+          docsArray.push({ id: docSnap.id, data: docSnap.data() });
+        });
 
-    // ソート：更新日時がある順に
-    docsArray.sort((a, b) => {
-      const t1 = a.data.updatedAt ? a.data.updatedAt.toMillis() : 0;
-      const t2 = b.data.updatedAt ? b.data.updatedAt.toMillis() : 0;
-      return t1 - t2;
-    });
+        // Sort by update time
+        docsArray.sort((a, b) => {
+          const t1 = a.data.updatedAt ? a.data.updatedAt.toMillis() : 0;
+          const t2 = b.data.updatedAt ? b.data.updatedAt.toMillis() : 0;
+          return t1 - t2;
+        });
 
-    window.users = {};
+        window.users = {};
 
-    docsArray.forEach(({ id, data }) => {
-      window.users[id] = data;
-      const ans = data.answers || {};
-      const comment = data.comment || "";
+        // Count marus
+        docsArray.forEach(({ id, data }) => {
+          window.users[id] = data;
+          const ans = data.answers || {};
+          ["date1", "date2", "date3"].forEach(date => {
+            if (ans[date] === "〇") {
+              maruCounts[date]++;
+              maruUsersByDate[date].push(id);
+            }
+          });
+        });
 
-      if (ans.date1 === "〇") {
-        countMaru++;
-        maruUsers.push(id);
+        // Draw table
+        docsArray.forEach(({ id, data }) => {
+          const ans = data.answers || {};
+          const comment = data.comment || "";
+
+          if (!ans.date1 && !ans.date2 && !ans.date3 && !comment) return;
+
+          const row = `
+            <tr>
+              <td>${id}</td>
+              <td class="${maruCounts.date1 >= 3 && maruUsersByDate.date1.includes(id) ? "highlight" : ""}">${ans.date1 || ""}</td>
+              <td class="${maruCounts.date2 >= 3 && maruUsersByDate.date2.includes(id) ? "highlight" : ""}">${ans.date2 || ""}</td>
+              <td class="${maruCounts.date3 >= 3 && maruUsersByDate.date3.includes(id) ? "highlight" : ""}">${ans.date3 || ""}</td>
+              <td>${comment}</td>
+            </tr>
+          `;
+          tbody.innerHTML += row;
+        });
+
+      } catch (error) {
+        console.error(error);
       }
-    });
-
-    const highlightedUsers = countMaru >= 3 ? maruUsers.slice(0, 3) : [];
-
-    // 表を再描画
-    docsArray.forEach(({ id, data }) => {
-      const ans = data.answers || {};
-      const comment = data.comment || "";
-
-      if (!ans.date1 && !comment) return;
-
-      const maruClass = highlightedUsers.includes(id) ? "highlight" : "";
-
-      const row = `
-  <tr>
-    <td>${id}</td>
-    <td class="${ans.date1 === '〇' ? 'highlight' : ''}">${ans.date1 || ""}</td>
-    <td class="${ans.date2 === '〇' ? 'highlight' : ''}">${ans.date2 || ""}</td>
-    <td class="${ans.date3 === '〇' ? 'highlight' : ''}">${ans.date3 || ""}</td>
-    <td>${comment}</td>
-  </tr>
-`;
-
-      tbody.innerHTML += row;
-    });
-
-    if (countMaru >= 3) {
-      status.textContent = "※ この会はすでに満席となりました。以降は観戦/リザーバー枠での参加を募集いたします。";
-      status.style.color = "red";
-    } else {
-      status.textContent = "";
-    }
-  } catch (error) {
-    console.error(error);
-  }
-};
-
+    };
 
     window.addEventListener("DOMContentLoaded", () => {
       document.getElementById("scheduleForm").addEventListener("submit", async (e) => {
@@ -326,9 +311,6 @@ window.showAllResults = async function() {
 
 <div class="container hidden" id="resultSection">
   <h2>全員の回答一覧</h2>
-  <p id="msg-date1" class="fullMsg"></p>
-  <p id="msg-date2" class="fullMsg"></p>
-  <p id="msg-date3" class="fullMsg"></p>
   <div style="overflow-x: auto;">
     <table id="resultTable">
       <thead>
