@@ -160,63 +160,79 @@
     }
 
     window.showAllResults = async function () {
-      const tbody = document.getElementById("resultTable").querySelector("tbody");
-      tbody.innerHTML = "";
+  const tbody = document.getElementById("resultTable").querySelector("tbody");
+  const status = document.getElementById("maruStatusResult");
+  tbody.innerHTML = "";
+  if (status) status.textContent = "";
 
-      const maruCounts = { date1: 0, date2: 0, date3: 0 };
-      const maruUsersByDate = { date1: [], date2: [], date3: [] };
+  try {
+    const docsArray = [];
+    const querySnapshot = await getDocs(collection(db, "users"));
+    querySnapshot.forEach(docSnap => {
+      docsArray.push({ id: docSnap.id, data: docSnap.data() });
+    });
 
-      try {
-        const docsArray = [];
-        const querySnapshot = await getDocs(collection(db, "users"));
-        querySnapshot.forEach(docSnap => {
-          docsArray.push({ id: docSnap.id, data: docSnap.data() });
-        });
+    // 更新日時でソート（昇順）
+    docsArray.sort((a, b) => {
+      const t1 = a.data.updatedAt ? a.data.updatedAt.toMillis() : 0;
+      const t2 = b.data.updatedAt ? b.data.updatedAt.toMillis() : 0;
+      return t1 - t2;
+    });
 
-        // Sort by update time
-        docsArray.sort((a, b) => {
-          const t1 = a.data.updatedAt ? a.data.updatedAt.toMillis() : 0;
-          const t2 = b.data.updatedAt ? b.data.updatedAt.toMillis() : 0;
-          return t1 - t2;
-        });
+    window.users = {};
 
-        window.users = {};
-
-        // Count marus
-        docsArray.forEach(({ id, data }) => {
-          window.users[id] = data;
-          const ans = data.answers || {};
-          ["date1", "date2", "date3"].forEach(date => {
-            if (ans[date] === "〇") {
-              maruCounts[date]++;
-              maruUsersByDate[date].push(id);
-            }
-          });
-        });
-
-        // Draw table
-        docsArray.forEach(({ id, data }) => {
-          const ans = data.answers || {};
-          const comment = data.comment || "";
-
-          if (!ans.date1 && !ans.date2 && !ans.date3 && !comment) return;
-
-          const row = `
-            <tr>
-              <td>${id}</td>
-              <td class="${maruCounts.date1 >= 3 && maruUsersByDate.date1.includes(id) ? "highlight" : ""}">${ans.date1 || ""}</td>
-              <td class="${maruCounts.date2 >= 3 && maruUsersByDate.date2.includes(id) ? "highlight" : ""}">${ans.date2 || ""}</td>
-              <td class="${maruCounts.date3 >= 3 && maruUsersByDate.date3.includes(id) ? "highlight" : ""}">${ans.date3 || ""}</td>
-              <td>${comment}</td>
-            </tr>
-          `;
-          tbody.innerHTML += row;
-        });
-
-      } catch (error) {
-        console.error(error);
-      }
+    const maruUsersByDate = {
+      date1: [],
+      date2: [],
+      date3: []
     };
+
+    // 各日付で〇の先着者を収集
+    docsArray.forEach(({ id, data }) => {
+      window.users[id] = data;
+      const ans = data.answers || {};
+
+      if (ans.date1 === "〇") maruUsersByDate.date1.push(id);
+      if (ans.date2 === "〇") maruUsersByDate.date2.push(id);
+      if (ans.date3 === "〇") maruUsersByDate.date3.push(id);
+    });
+
+    // 各日付で先着3人をハイライト対象に
+    const highlightedUsers = {
+      date1: maruUsersByDate.date1.slice(0, 3),
+      date2: maruUsersByDate.date2.slice(0, 3),
+      date3: maruUsersByDate.date3.slice(0, 3),
+    };
+
+    // 表の描画
+    docsArray.forEach(({ id, data }) => {
+      const ans = data.answers || {};
+      const comment = data.comment || "";
+
+      // 空の人はスキップ
+      if (!ans.date1 && !ans.date2 && !ans.date3 && !comment) return;
+
+      const date1Class = highlightedUsers.date1.includes(id) ? "highlight" : "";
+      const date2Class = highlightedUsers.date2.includes(id) ? "highlight" : "";
+      const date3Class = highlightedUsers.date3.includes(id) ? "highlight" : "";
+
+      const row = `
+        <tr>
+          <td>${id}</td>
+          <td class="${date1Class}">${ans.date1 || ""}</td>
+          <td class="${date2Class}">${ans.date2 || ""}</td>
+          <td class="${date3Class}">${ans.date3 || ""}</td>
+          <td>${comment}</td>
+        </tr>
+      `;
+      tbody.innerHTML += row;
+    });
+
+  } catch (error) {
+    console.error("データ取得エラー:", error);
+  }
+};
+
 
     window.addEventListener("DOMContentLoaded", () => {
       document.getElementById("scheduleForm").addEventListener("submit", async (e) => {
