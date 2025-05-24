@@ -198,11 +198,13 @@
     });
 
     // 各日付で先着3人をハイライト対象に
-    const highlightedUsers = {
-      date1: maruUsersByDate.date1.slice(0, 3),
-      date2: maruUsersByDate.date2.slice(0, 3),
-      date3: maruUsersByDate.date3.slice(0, 3),
-    };
+    // 変更後（3人未満なら空配列＝ハイライトなし）
+const highlightedUsers = {
+  date1: maruUsersByDate.date1.length >= 3 ? maruUsersByDate.date1.slice(0, 3) : [],
+  date2: maruUsersByDate.date2.length >= 3 ? maruUsersByDate.date2.slice(0, 3) : [],
+  date3: maruUsersByDate.date3.length >= 3 ? maruUsersByDate.date3.slice(0, 3) : [],
+};
+
 // 「満員」の判定
      if (
       maruUsersByDate.date1.length >= 3 ||
