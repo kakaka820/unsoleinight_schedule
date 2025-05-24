@@ -203,6 +203,14 @@
       date2: maruUsersByDate.date2.slice(0, 3),
       date3: maruUsersByDate.date3.slice(0, 3),
     };
+// 「満員」の判定
+     if (
+      maruUsersByDate.date1.length >= 3 ||
+      maruUsersByDate.date2.length >= 3 ||
+      maruUsersByDate.date3.length >= 3
+    ) {
+      if (status) status.textContent = "この会はすでに満員です";
+    }
 
     // 表の描画
     docsArray.forEach(({ id, data }) => {
