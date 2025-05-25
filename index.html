@@ -224,7 +224,82 @@ const highlightedUsers = {
       } 
     } 
  
-    window.showAllResults = showAllResults; 
+async function showAllResults() {
+  const tbody = document.getElementById("resultTable").querySelector("tbody");
+  const status = document.getElementById("maruStatusResult");
+  tbody.innerHTML = "";
+  if (status) status.textContent = "";
+
+  const MAX_CAPACITY = 3; // ✅ 定数導入
+
+  try {
+    const docsArray = [];
+    const querySnapshot = await getDocs(collection(db, "users"));
+    querySnapshot.forEach(docSnap => {
+      docsArray.push({ id: docSnap.id, data: docSnap.data() });
+    });
+
+    docsArray.sort((a, b) => {
+      const t1 = a.data.updatedAt ? a.data.updatedAt.toMillis() : 0;
+      const t2 = b.data.updatedAt ? b.data.updatedAt.toMillis() : 0;
+      return t1 - t2;
+    });
+
+    window.users = {};
+    const maruUsersByDate = { date1: [], date2: [], date3: [] };
+
+    docsArray.forEach(({ id, data }) => {
+      window.users[id] = data;
+      const ans = data.answers || {};
+      if (ans.date1 === "〇") maruUsersByDate.date1.push(id);
+      if (ans.date2 === "〇") maruUsersByDate.date2.push(id);
+      if (ans.date3 === "〇") maruUsersByDate.date3.push(id);
+    });
+
+    // ✅ 早い順にMAX_CAPACITY人をピックアップしてハイライト
+    const highlightedUsers = {
+      date1: maruUsersByDate.date1.slice(0, MAX_CAPACITY),
+      date2: maruUsersByDate.date2.slice(0, MAX_CAPACITY),
+      date3: maruUsersByDate.date3.slice(0, MAX_CAPACITY),
+    };
+
+    // ✅ 上限を超えていたら警告を表示
+    if (
+      maruUsersByDate.date1.length >= MAX_CAPACITY ||
+      maruUsersByDate.date2.length >= MAX_CAPACITY ||
+      maruUsersByDate.date3.length >= MAX_CAPACITY
+    ) {
+      if (status) status.textContent = "この会はすでに満席となりました。参加人数の上限に達しています。";
+    }
+
+    docsArray.forEach(({ id, data }) => {
+      const ans = data.answers || {};
+      const comment = data.comment || "";
+      if (!ans.date1 && !ans.date2 && !ans.date3 && !comment) return;
+
+      const row = `
+        <tr>
+          <td>${id}</td>
+          <td class="${highlightedUsers.date1.includes(id) ? "highlight" : ""}">
+            ${ans.date1 || ""}
+          </td>
+          <td class="${highlightedUsers.date2.includes(id) ? "highlight" : ""}">
+            ${ans.date2 || ""}
+          </td>
+          <td class="${highlightedUsers.date3.includes(id) ? "highlight" : ""}">
+            ${ans.date3 || ""}
+          </td>
+          <td>${comment}</td>
+        </tr>
+      `;
+      tbody.innerHTML += row;
+    });
+
+  } catch (error) {
+    console.error("データ取得エラー:", error);
+  }
+}
+
  
     window.login = async function () { 
       const id = document.getElementById("userId").value.trim(); 
@@ -428,4 +503,3 @@ const highlightedUsers = {
  
 </body> 
 </html> 
-test
