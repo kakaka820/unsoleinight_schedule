@@ -1,6 +1,8 @@
 // Firebase モジュールのインポート
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
 
 // Firebase 設定と初期化
 const firebaseConfig = {
@@ -198,35 +200,58 @@ window.backToLogin = () => {
 };
 
 // 回答送信
-window.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("scheduleForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    if (!window.currentUser) {
-      alert("ログインしてください。");
-      return;
-    }
+document.getElementById("scheduleForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!window.currentUser) {
+    alert("ログインしてください。");
+    return;
+  }
 
-    const answers = {};
-    ["date1", "date2", "date3"].forEach(date => {
-      answers[date] = document.querySelector(`input[name="${date}"]:checked`)?.value || "";
-    });
-
-    const comment = document.getElementById("comment").value;
-    const prevAnswers = window.users[window.currentUser]?.answers || {};
-
-    const updateData = {
-      answers,
-      comment
-    };
-
-    if (JSON.stringify(answers) !== JSON.stringify(prevAnswers)) {
-      updateData.updatedAt = serverTimestamp();
-    }
-
-    await setDoc(doc(db, "users", window.currentUser), updateData, { merge: true });
-    window.users[window.currentUser] = { ...window.users[window.currentUser], ...updateData };
-
-    document.getElementById("submitMessage").textContent = "回答を保存しました！";
-    await showAllResults();
+  const answers = {};
+  ["date1", "date2", "date3"].forEach(date => {
+    answers[date] = document.querySelector(`input[name="${date}"]:checked`)?.value || "";
   });
+
+  const comment = document.getElementById("comment").value;
+  const prevAnswers = window.users[window.currentUser]?.answers || {};
+
+  const updateData = {
+    answers,
+    comment
+  };
+
+  // 🔴 ログ記録処理（変更があった場合のみ）
+  const logPromises = [];
+
+  ["date1", "date2", "date3"].forEach(date => {
+    const oldVal = prevAnswers[date] || "";
+    const newVal = answers[date] || "";
+
+    if (oldVal !== newVal) {
+      logPromises.push(
+        addDoc(collection(db, "logs"), {
+          user: window.currentUser,
+          field: date,
+          from: oldVal,
+          to: newVal,
+          timestamp: serverTimestamp()
+        })
+      );
+    }
+  });
+
+  // 🔄 タイムスタンプ更新
+  if (JSON.stringify(answers) !== JSON.stringify(prevAnswers)) {
+    updateData.updatedAt = serverTimestamp();
+  }
+
+  await Promise.all([
+    setDoc(doc(db, "users", window.currentUser), updateData, { merge: true }),
+    ...logPromises
+  ]);
+
+  window.users[window.currentUser] = { ...window.users[window.currentUser], ...updateData };
+
+  document.getElementById("submitMessage").textContent = "回答を保存しました！";
+  await showAllResults();
 });
