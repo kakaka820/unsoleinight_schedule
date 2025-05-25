@@ -1,5 +1,9 @@
 開発中です。アンソレイナイトの参加表明ページはこちら→https://kakaka820.github.io/ikinariMVP/
 
+
+保守性を高めるコードへの書き換えテスト
+
+
 <!DOCTYPE html> 
 <html lang="ja"> 
 <head> 
@@ -93,6 +97,8 @@
       document.getElementById("comment").value = comment; 
     } 
  
+
+
     async function showAllResults() { 
       const tbody = document.getElementById("resultTable").querySelector("tbody"); 
       const status = document.getElementById("maruStatusResult"); 
@@ -122,20 +128,72 @@
           if (ans.date2 === "〇") maruUsersByDate.date2.push(id); 
           if (ans.date3 === "〇") maruUsersByDate.date3.push(id); 
         }); 
+
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "./firebase";
+import { renderAnswers } from "./renderAnswers";
+/ ✅ 定数の導入（参加上限人数）
+const MAX_CAPACITY = 3;
+
+
+
+
  
-        const highlightedUsers = { 
-          date1: maruUsersByDate.date1.slice(0, 3), 
-          date2: maruUsersByDate.date2.slice(0, 3), 
-          date3: maruUsersByDate.date3.slice(0, 3), 
-        }; 
- 
-        if ( 
-          maruUsersByDate.date1.length >= 3 || 
-          maruUsersByDate.date2.length >= 3 || 
-          maruUsersByDate.date3.length >= 3 
-        ) { 
-          if (status) status.textContent = "この会はすでに満席となりました。以降は観戦/リザーバー枠での参加を募集いたします。"; 
-        } 
+        export async function fetchAndRenderAnswers(status) {
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const userDocRef = doc(db, "users", user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        const groupId = userData.groupId;
+
+        const groupDocRef = doc(db, "groups", groupId);
+        const groupDocSnap = await getDoc(groupDocRef);
+
+        if (groupDocSnap.exists()) {
+          const groupData = groupDocSnap.data();
+          const users = groupData.users || [];
+ const maruUsersByDate = {
+            date1: [],
+            date2: [],
+            date3: [],
+          };
+
+
+ users.forEach((user) => {
+            if (user.answers?.date1 === "〇") maruUsersByDate.date1.push(user.name);
+            if (user.answers?.date2 === "〇") maruUsersByDate.date2.push(user.name);
+            if (user.answers?.date3 === "〇") maruUsersByDate.date3.push(user.name);
+          });
+
+
+       if (
+            maruUsersByDate.date1.length >= MAX_CAPACITY || 
+            maruUsersByDate.date2.length >= MAX_CAPACITY || 
+            maruUsersByDate.date3.length >= MAX_CAPACITY
+          ) {
+            if (status) status.textContent = "この会はすでに満席となりました。参加人数の上限に達しています。";
+          }
+
+const highlightedUsers = {
+            date1: maruUsersByDate.date1.slice(0, MAX_CAPACITY),
+            date2: maruUsersByDate.date2.slice(0, MAX_CAPACITY),
+            date3: maruUsersByDate.date3.slice(0, MAX_CAPACITY),
+          };
+
+          renderAnswers(maruUsersByDate, highlightedUsers);
+        } else {
+          console.error("Group document not found");
+        }
+      } else {
+        console.error("User document not found");
+      }
+    }
+  });
+}
  
         docsArray.forEach(({ id, data }) => { 
           const ans = data.answers || {}; 
@@ -279,6 +337,15 @@
       }); 
     }); 
   </script> 
+
+
+
+
+
+
+
+
+
   <script src="https://cdn.jsdelivr.net/npm/js-sha256@0.9.0/src/sha256.min.js"></script> 
  
 </head> 
