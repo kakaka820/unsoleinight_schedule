@@ -313,7 +313,7 @@
         const delBtn = document.createElement("button");
         delBtn.textContent = "削除";
         delBtn.onclick = () => {
-          if (confirm(`日程「${d.date}」を削除しますか？`)) {
+          if (confirm(`今削除しようとしている日程は「${d.date}」です。本当に削除しますか？`)) {
             removeDate(d.id, ADMIN_ID);
           }
         };
