@@ -1,4 +1,4 @@
-a<!DOCTYPE html>
+ｂ<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
@@ -84,8 +84,45 @@ a<!DOCTYPE html>
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const { doc, getDoc, setDoc } = firebase.firestore;
+    // 定員を取得
+async function getMaxCapacity() {
+  try {
+    const docRef = db.collection("settings").doc("capacity");
+    const docSnap = await docRef.get();
+    if (docSnap.exists) {
+      const data = docSnap.data();
+      return data.maxCapacity || 3;
+    }
+  } catch (e) {
+    console.error("定員取得エラー:", e);
+  }
+  return 3;
+}
 
+// 定員を更新
+async function updateMaxCapacity() {
+  const newMax = parseInt(document.getElementById("newMax").value);
+  const msg = document.getElementById("adminMessage");
+
+  if (!newMax || newMax < 1) {
+    msg.textContent = "正しい定員数を入力してください。";
+    msg.style.color = "red";
+    return;
+  }
+
+  try {
+    await db.collection("settings").doc("capacity").set({ maxCapacity: newMax });
+    msg.textContent = "定員を更新しました。";
+    msg.style.color = "green";
+    displayMaxCapacity();
+  } catch (e) {
+    console.error("更新エラー:", e);
+    msg.textContent = "定員の更新に失敗しました。";
+    msg.style.color = "red";
+  }
+}
+
+    
     // ログイン処理（ハードコード）
     function login() {
       const id = document.getElementById("adminId").value;
