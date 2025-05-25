@@ -5,11 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>日程調整アンケート</title>
   <link rel="stylesheet" href="style.css" />
+
+  <!-- ✅ Firebaseを使ったモジュールスクリプト -->
   <script type="module" src="./app.js" defer></script>
+
+  <!-- ✅ パスワードハッシュ用のSHA256ライブラリ -->
   <script src="https://cdn.jsdelivr.net/npm/js-sha256@0.9.0/src/sha256.min.js"></script>
 </head>
 <body>
 
+<!-- 🔒 ログインセクション -->
 <div class="container" id="loginSection">
   <h2>ログイン</h2>
   <input type="text" id="userId" placeholder="ID" /><br><br>
@@ -19,6 +24,7 @@
   <p id="loginError"></p>
 </div>
 
+<!-- 📝 新規登録セクション -->
 <div class="container hidden" id="registerSection">
   <h2>新規アカウント登録</h2>
   <input type="text" id="newUserId" placeholder="新しいID" /><br><br>
@@ -28,10 +34,12 @@
   <p id="registerMessage"></p>
 </div>
 
+<!-- 📅 日程調整フォームセクション -->
 <div class="container hidden" id="formSection">
   <h2>日程調整アンケート</h2>
   <p id="welcomeMsg"></p>
   <p id="maruStatusResult" class="fullMsg"></p>
+
   <form id="scheduleForm">
     <table>
       <thead>
@@ -58,14 +66,17 @@
         </tr>
       </tbody>
     </table>
+
     <br>
     <label>コメント（任意）:</label><br>
     <textarea id="comment" placeholder="コメントの追記のみでは列の変更は起きません。赤枠で強調表示されるのは開催される村のうち、参加エントリーが早かった方のみです。"></textarea><br><br>
+
     <button type="submit">送信・更新</button>
     <p id="submitMessage"></p>
   </form>
 </div>
 
+<!-- 📊 結果セクション -->
 <div class="container hidden" id="resultSection">
   <h2>全回答一覧</h2>
   <p id="maruStatusResult"></p>
@@ -82,6 +93,9 @@
     <tbody></tbody>
   </table>
 </div>
-<script src="app.js"></script>
+
+<!-- ✅ 注意：app.js は1回だけ読み込む！ -->
+<!-- ❌ 削除済み：<script src="app.js"></script> -->
+
 </body>
 </html>
