@@ -1,170 +1,501 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>管理画面</title>
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>管理者画面 - 定員設定＆日程管理</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      margin: 2em;
-      background-color: #f9f9f9;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      padding: 24px;
+      background: #f7f9fc;
       color: #333;
-    }
-    .container {
-      max-width: 700px;
+      max-width: 800px;
       margin: auto;
     }
-    h1 {
+    h1, h2 {
       text-align: center;
-      margin-bottom: 1em;
-    }
-    .section {
-      background: white;
-      padding: 1em;
-      margin-bottom: 1.5em;
-      border-radius: 8px;
-      box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
-    }
-    input, button {
-      padding: 0.5em;
-      margin: 0.5em 0;
-    }
-    ul {
-      padding-left: 1.5em;
+      color: #222;
     }
     .hidden {
       display: none;
     }
-    .log-entry {
-      margin-bottom: 0.5em;
-      padding-bottom: 0.5em;
-      border-bottom: 1px solid #ddd;
+    .container {
+      background: #fff;
+      padding: 20px 24px;
+      margin-top: 24px;
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgb(0 0 0 / 0.1);
+    }
+    label {
+      display: block;
+      margin-top: 16px;
+      font-weight: 600;
+    }
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px 12px;
+      margin-top: 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      box-sizing: border-box;
+      transition: border-color 0.2s ease;
+    }
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="date"]:focus,
+    input[type="password"]:focus {
+      border-color: #2196F3;
+      outline: none;
+    }
+    button {
+      margin-top: 20px;
+      padding: 12px 20px;
+      font-size: 1rem;
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.25s ease;
+    }
+    button:hover {
+      background-color: #1769aa;
+    }
+    .status-message {
+      margin-top: 14px;
+      font-weight: 600;
+      text-align: center;
+    }
+    ul {
+      padding-left: 24px;
+      margin-top: 12px;
+    }
+    li {
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 1rem;
+      padding: 6px 12px;
+      background: #f0f4f8;
+      border-radius: 8px;
+      user-select: none;
+    }
+    li button {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: background-color 0.2s ease;
+    }
+    li button:hover {
+      background-color: #c0392b;
+    }
+
+    /* ログ表示部分 */
+    #logFilter {
+      margin: 32px 0 12px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    #logFilter > div {
+      min-width: 180px;
+    }
+    #logFilter label {
+      margin: 0;
+      font-weight: 500;
+      display: block;
+    }
+    #logFilter input {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+    }
+    #logFilter button {
+      background-color: #2196F3;
+      padding: 10px 16px;
+      margin-left: 0;
+      min-width: 90px;
+      font-weight: 600;
+    }
+    #logFilter button:hover {
+      background-color: #1769aa;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 0.95rem;
+      user-select: text;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px 12px;
+      text-align: left;
+    }
+    th {
+      background-color: #e1e9f5;
+      font-weight: 700;
+    }
+    tbody tr:nth-child(odd) {
+      background-color: #f9fbfe;
     }
   </style>
 </head>
 <body>
-  <div class="container">
 
-    <div id="loginSection" class="section">
-      <h2>管理者ログイン</h2>
-      <input type="text" id="adminId" placeholder="ID"><br>
-      <input type="password" id="adminPassword" placeholder="パスワード"><br>
-      <button onclick="login()">ログイン</button>
-      <p id="loginError" style="color: red;"></p>
+  <h1>管理者ログイン</h1>
+
+  <div class="container" id="loginSection">
+    <label for="adminId">管理者ID:</label>
+    <input type="text" id="adminId" autocomplete="username" />
+    <label for="adminPw">パスワード:</label>
+    <input type="password" id="adminPw" autocomplete="current-password" />
+    <button id="loginBtn">ログイン</button>
+    <p id="loginMessage" class="status-message"></p>
+  </div>
+
+  <div class="container hidden" id="adminSection">
+
+    <h2>定員数の設定</h2>
+    <p>現在の定員数: <span id="currentCapacity">読み込み中...</span></p>
+    <label for="newMax">現在の定員数を変更：</label>
+    <input type="number" id="newMax" min="1" />
+    <button id="updateCapacityBtn">保存</button>
+    <p id="adminMessage" class="status-message"></p>
+
+    <hr style="margin: 40px 0;" />
+
+    <h2>イベント日程の管理</h2>
+    <label for="newDateInput">新しい日程を追加：</label>
+    <input type="text" id="newDateInput" placeholder="例：2025-06-01 19:00〜" />
+    <button id="addDateBtn">追加</button>
+    <ul id="datesList"></ul>
+    <p id="datesMessage" class="status-message"></p>
+
+    <hr style="margin: 40px 0;" />
+
+    <h2>変更ログ</h2>
+
+    <div id="logFilter">
+      <div>
+        <label for="userFilter">ユーザー名で絞り込み：</label>
+        <input type="text" id="userFilter" placeholder="ユーザー名" />
+      </div>
+      <div>
+        <label for="dateFilter">日付で絞り込み：</label>
+        <input type="date" id="dateFilter" />
+      </div>
+      <div>
+        <button id="applyFilterBtn">絞り込み</button>
+        <button id="clearFilterBtn">クリア</button>
+      </div>
     </div>
 
-    <div id="adminPanel" class="section hidden">
-      <h1>日程調整・管理画面</h1>
-
-      <div>
-        <h3>候補日を追加</h3>
-        <input type="text" id="newDate" placeholder="例: 2025-06-15 14:00">
-        <button onclick="addDate()">追加</button>
-      </div>
-
-      <div>
-        <h3>既存の候補日</h3>
-        <ul id="dateList"></ul>
-      </div>
-
-      <div>
-        <h3>変更ログ</h3>
-        <button onclick="fetchLogs()">ログを再読み込み</button>
-        <div id="logList"></div>
-      </div>
-    </div>
+    <table id="logTable">
+      <thead>
+        <tr>
+          <th>ユーザー</th>
+          <th>日付</th>
+          <th>操作</th>
+          <th>変更時刻</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
 
   </div>
 
+  <!-- Firebase SDK (v9 compat版) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
   <script>
-    // Firebase 初期化
+    // Firebase初期化
     const firebaseConfig = {
-  apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
-  authDomain: "unsoleinight-schedule.firebaseapp.com",
-  projectId: "unsoleinight-schedule",
-  storageBucket: "unsoleinight-schedule.firebasestorage.app",
-  messagingSenderId: "1040333692698",
-  appId: "1:1040333692698:web:fb0e4f481dff8167f756a3"
-};
+      apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
+      authDomain: "unsoleinight-schedule.firebaseapp.com",
+      projectId: "unsoleinight-schedule",
+      storageBucket: "unsoleinight-schedule.firebasestorage.app",
+      messagingSenderId: "1040333692698",
+      appId: "1:1040333692698:web:fb0e4f481dff8167f756a3"
+    };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // 固定ログイン情報（開発用）
-    const FIXED_ID = "admin";
-    const FIXED_PASSWORD = "password123";
+    // 管理者認証情報（仮）
+    const ADMIN_ID = "admin";
+    const ADMIN_PW = "password";
 
-    function login() {
-      const inputId = document.getElementById("adminId").value;
-      const inputPassword = document.getElementById("adminPassword").value;
-      if (inputId === FIXED_ID && inputPassword === FIXED_PASSWORD) {
-        document.getElementById("loginSection").classList.add("hidden");
-        document.getElementById("adminPanel").classList.remove("hidden");
-        loadDates();
-        fetchLogs();
-      } else {
-        document.getElementById("loginError").textContent = "IDまたはパスワードが間違っています";
+    // --- 定員管理 ---
+
+    async function getMaxCapacity() {
+      try {
+        const doc = await db.collection("settings").doc("capacity").get();
+        if (doc.exists) {
+          const data = doc.data();
+          return data.maxCapacity || 3;
+        }
+      } catch (e) {
+        console.error("定員取得失敗:", e);
+      }
+      return 3;
+    }
+
+    async function displayMaxCapacity() {
+      const current = await getMaxCapacity();
+      document.getElementById("currentCapacity").textContent = current + "人";
+    }
+
+    async function updateMaxCapacity() {
+      const newMax = parseInt(document.getElementById("newMax").value);
+      const msg = document.getElementById("adminMessage");
+      msg.textContent = "";
+
+      if (!newMax || newMax < 1) {
+        msg.textContent = "1以上の数値を入力してください。";
+        msg.style.color = "red";
+        return;
+      }
+
+      try {
+        await db.collection("settings").doc("capacity").set({ maxCapacity: newMax });
+        msg.textContent = "定員数を更新しました。";
+        msg.style.color = "green";
+        document.getElementById("newMax").value = "";
+        await displayMaxCapacity();
+      } catch (e) {
+        msg.textContent = "更新に失敗しました。";
+        msg.style.color = "red";
       }
     }
 
-    async function loadDates() {
-      const list = document.getElementById("dateList");
+    // --- 日程管理 ---
+
+    async function getDates() {
+      try {
+        const snapshot = await db.collection("dates").orderBy("timestamp").get();
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (e) {
+        console.error("日程取得失敗:", e);
+        return [];
+      }
+    }
+
+    async function displayDates() {
+      const list = document.getElementById("datesList");
       list.innerHTML = "";
-      const snapshot = await db.collection("dates").orderBy("value").get();
-      snapshot.forEach(doc => {
+      const dates = await getDates();
+
+      if (dates.length === 0) {
+        list.innerHTML = "<li>登録されている日程がありません。</li>";
+        return;
+      }
+
+      for (const d of dates) {
         const li = document.createElement("li");
-        li.textContent = doc.id;
-        const btn = document.createElement("button");
-        btn.textContent = "削除";
-        btn.onclick = () => removeDate(doc.id);
-        li.appendChild(btn);
+        li.textContent = d.date;
+
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "削除";
+        delBtn.onclick = () => {
+          if (confirm(`日程「${d.date}」を削除しますか？`)) {
+            removeDate(d.id, ADMIN_ID);
+          }
+        };
+        li.appendChild(delBtn);
         list.appendChild(li);
-      });
+      }
     }
 
-    async function addDate() {
-      const newDate = document.getElementById("newDate").value.trim();
-      if (!newDate) return alert("日付を入力してください");
-      await db.collection("dates").doc(newDate).set({ value: newDate });
-      await db.collection("logs").add({
-        timestamp: new Date(),
-        action: "追加",
-        date: newDate,
-        actor: "admin"
-      });
-      document.getElementById("newDate").value = "";
-      loadDates();
-      fetchLogs();
+    async function addDate(dateStr, userId) {
+      try {
+        await db.collection("dates").add({
+          date: dateStr,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+        await addLog(userId, `日程追加: ${dateStr}`);
+        await displayDates();
+        document.getElementById("datesMessage").textContent = "日程を追加しました。";
+        document.getElementById("datesMessage").style.color = "green";
+      } catch (e) {
+        console.error("日程追加失敗:", e);
+        document.getElementById("datesMessage").textContent = "日程の追加に失敗しました。";
+        document.getElementById("datesMessage").style.color = "red";
+      }
     }
 
-    async function removeDate(date) {
-      if (!confirm(`${date} を削除しますか？`)) return;
-      await db.collection("dates").doc(date).delete();
-      await db.collection("logs").add({
-        timestamp: new Date(),
-        action: "削除",
-        date: date,
-        actor: "admin"
-      });
-      loadDates();
-      fetchLogs();
+    async function removeDate(id, userId) {
+      try {
+        const doc = await db.collection("dates").doc(id).get();
+        if (!doc.exists) return;
+
+        const dateStr = doc.data().date;
+        await db.collection("dates").doc(id).delete();
+        await addLog(userId, `日程削除: ${dateStr}`);
+        await displayDates();
+        document.getElementById("datesMessage").textContent = "日程を削除しました。";
+        document.getElementById("datesMessage").style.color = "green";
+      } catch (e) {
+        console.error("日程削除失敗:", e);
+        document.getElementById("datesMessage").textContent = "日程の削除に失敗しました。";
+        document.getElementById("datesMessage").style.color = "red";
+      }
+    }
+
+    // --- ログ管理 ---
+
+    async function addLog(user, action) {
+      try {
+        await db.collection("logs").add({
+          user,
+          action,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        });
+      } catch (e) {
+        console.error("ログ追加失敗:", e);
+      }
     }
 
     async function fetchLogs() {
-      const container = document.getElementById("logList");
-      container.innerHTML = "";
-      const snapshot = await db.collection("logs").orderBy("timestamp", "desc").limit(50).get();
-      snapshot.forEach(doc => {
-        const log = doc.data();
-        const div = document.createElement("div");
-        div.classList.add("log-entry");
-        const date = log.timestamp.toDate().toLocaleString();
-        div.textContent = `[${date}] ${log.actor} が「${log.date}」を ${log.action}`;
-        container.appendChild(div);
-      });
+      try {
+        const snapshot = await db.collection("logs").orderBy("timestamp", "desc").limit(100).get();
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (e) {
+        console.error("ログ取得失敗:", e);
+        return [];
+      }
     }
+
+    function renderLogs(logs) {
+      const tbody = document.querySelector("#logTable tbody");
+      tbody.innerHTML = "";
+
+      if (logs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#666;">ログがありません。</td></tr>`;
+        return;
+      }
+
+      for (const log of logs) {
+        const tr = document.createElement("tr");
+
+        const userTd = document.createElement("td");
+        userTd.textContent = log.user || "-";
+
+        const actionTd = document.createElement("td");
+        actionTd.textContent = log.action || "-";
+
+        const dateTd = document.createElement("td");
+        dateTd.textContent = log.timestamp && log.timestamp.toDate
+          ? log.timestamp.toDate().toLocaleDateString()
+          : "-";
+
+        const timeTd = document.createElement("td");
+        timeTd.textContent = log.timestamp && log.timestamp.toDate
+          ? log.timestamp.toDate().toLocaleTimeString()
+          : "-";
+
+        tr.appendChild(userTd);
+        tr.appendChild(actionTd);
+        tr.appendChild(dateTd);
+        tr.appendChild(timeTd);
+
+        tbody.appendChild(tr);
+      }
+    }
+
+    // --- フィルタリング ---
+
+    async function applyFilter() {
+      const userFilter = document.getElementById("userFilter").value.trim().toLowerCase();
+      const dateFilterVal = document.getElementById("dateFilter").value;
+      let logs = await fetchLogs();
+
+      if (userFilter) {
+        logs = logs.filter(log => (log.user || "").toLowerCase().includes(userFilter));
+      }
+      if (dateFilterVal) {
+        logs = logs.filter(log => {
+          if (!log.timestamp || !log.timestamp.toDate) return false;
+          const logDate = log.timestamp.toDate().toISOString().slice(0, 10);
+          return logDate === dateFilterVal;
+        });
+      }
+      renderLogs(logs);
+    }
+
+    function clearFilter() {
+      document.getElementById("userFilter").value = "";
+      document.getElementById("dateFilter").value = "";
+      loadLogs();
+    }
+
+    // --- ログイン処理 ---
+
+    function login() {
+      const idInput = document.getElementById("adminId").value.trim();
+      const pwInput = document.getElementById("adminPw").value.trim();
+      const msg = document.getElementById("loginMessage");
+
+      if (idInput === ADMIN_ID && pwInput === ADMIN_PW) {
+        // ログイン成功
+        document.getElementById("loginSection").classList.add("hidden");
+        document.getElementById("adminSection").classList.remove("hidden");
+        msg.textContent = "";
+        initializeAdmin();
+      } else {
+        msg.textContent = "IDかパスワードが違います。";
+        msg.style.color = "red";
+      }
+    }
+
+    // --- 初期化 ---
+
+    async function initializeAdmin() {
+      await displayMaxCapacity();
+      await displayDates();
+      await loadLogs();
+    }
+
+    async function loadLogs() {
+      const logs = await fetchLogs();
+      renderLogs(logs);
+    }
+
+    // --- イベント登録 ---
+
+    document.getElementById("loginBtn").addEventListener("click", login);
+
+    document.getElementById("updateCapacityBtn").addEventListener("click", updateMaxCapacity);
+
+    document.getElementById("addDateBtn").addEventListener("click", () => {
+      const dateStr = document.getElementById("newDateInput").value.trim();
+      if (!dateStr) {
+        document.getElementById("datesMessage").textContent = "日程を入力してください。";
+        document.getElementById("datesMessage").style.color = "red";
+        return;
+      }
+      addDate(dateStr, ADMIN_ID);
+      document.getElementById("newDateInput").value = "";
+    });
+
+    document.getElementById("applyFilterBtn").addEventListener("click", applyFilter);
+    document.getElementById("clearFilterBtn").addEventListener("click", clearFilter);
   </script>
+
 </body>
 </html>
