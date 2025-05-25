@@ -47,6 +47,14 @@ async function showAllResults() {
     // capacity の取得
     const configSnap = await getDoc(doc(db, "settings", "capacity"));
     const MAX = configSnap.exists() ? configSnap.data().maxCapacity : 3;  // デフォルト3
+    const configSnap = await getDoc(doc(db, "settings", "capacity"));
+if (configSnap.exists()) {
+  console.log("FirestoreからのmaxCapacity:", configSnap.data().maxCapacity);
+} else {
+  console.warn("settings/capacity ドキュメントが見つかりません。デフォルト値を使用します。");
+}
+const MAX = configSnap.exists() ? configSnap.data().maxCapacity : 3;
+
     const MIN_HIGHLIGHT = MAX;
 
     const docsArray = [];
