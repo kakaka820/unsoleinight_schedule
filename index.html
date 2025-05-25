@@ -1,93 +1,311 @@
-開発中です。アンソレイナイトの参加表明ページはこちら→https://kakaka820.github.io/ikinariMVP/
 
 
-保守性を高めるコードへの書き換えテスト
-
-
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>日程調整アンケート</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background-color: #f0f8ff;
-      padding: 20px;
-    }
-    .container {
-      max-width: 800px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px #aaa;
-      margin-bottom: 30px;
-      overflow-x: auto;
-    }
-    .hidden { display: none; }
+<!DOCTYPE html> 
+<html lang="ja"> 
+<head> 
+  <meta charset="UTF-8" /> 
+  <meta name="viewport" content="width=device-width, initial-scale=1" /> 
+  <title>日程調整アンケート</title> 
+  <style> 
+    body { 
+      font-family: sans-serif; 
+      background-color: #f0f8ff; 
+      padding: 20px; 
+    } 
+    .container { 
+      max-width: 800px; 
+      margin: auto; 
+      background: white; 
+      padding: 20px; 
+      border-radius: 10px; 
+      box-shadow: 0 0 10px #aaa; 
+      margin-bottom: 30px; 
+      overflow-x: auto; 
+    } 
+    .hidden { display: none; } 
     table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      text-align: center;
-      padding: 8px;
-    }
-    th {
-      background-color: #e0f0ff;
-    }
-    textarea {
-      width: 100%;
-      height: 60px;
-    }
-    .highlight {
-      background-color: #ffcccc;
-    }
-    #submitMessage { color: green; }
-    #loginError, #registerMessage { color: red; }
-    .fullMsg {
-      color: red;
-      font-weight: bold;
-    }
-    @media (max-width: 600px) {
-      table, thead, tbody, th, td, tr {
-        font-size: 14px;
-      }
-    }
+    width: 100%;
+    border-collapse: collapse;
+  }
+    th, td { 
+      border: 1px solid #ccc; 
+      text-align: center; 
+      padding: 8px; 
+    } 
+    th { 
+      background-color: #e0f0ff; 
+    } 
+    textarea { 
+      width: 100%; 
+      height: 60px; 
+    } 
+    .highlight { 
+      background-color: #ffcccc; 
+    } 
+    #submitMessage { color: green; } 
+    #loginError, #registerMessage { color: red; } 
+    .fullMsg { 
+      color: red; 
+      font-weight: bold; 
+    } 
+    @media (max-width: 600px) { 
+      table, thead, tbody, th, td, tr { 
+        font-size: 14px; 
+      } 
+    } 
     #resultSection {
-      overflow-x: auto;
-    }
-    #resultTable {
-      min-width: 600px;
-    }
-  </style>
-</head>
-<body>
+  overflow-x: auto;
+}
+#resultTable {
+  min-width: 600px; /* 必要に応じて調整、スマホで収まりきらない幅を確保 */
+}
 
-<div class="container" id="loginSection">
-  <h2>ログイン</h2>
-  <input type="text" id="userId" placeholder="ID" /><br><br>
-  <input type="password" id="password" placeholder="パスワード" /><br><br>
-  <button onclick="login()">ログイン</button>
-  <button onclick="showRegister()">新規登録</button>
-  <p id="loginError"></p>
-</div>
+  </style> 
+ 
+  <script type="module"> 
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js"; 
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js"; 
+ 
+    const firebaseConfig = {
+  apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
+  authDomain: "unsoleinight-schedule.firebaseapp.com",
+  projectId: "unsoleinight-schedule",
+  storageBucket: "unsoleinight-schedule.firebasestorage.app",
+  messagingSenderId: "1040333692698",
+  appId: "1:1040333692698:web:fb0e4f481dff8167f756a3"
+};
 
-<div class="container hidden" id="registerSection">
-  <h2>新規アカウント登録</h2>
-  <input type="text" id="newUserId" placeholder="新しいID" /><br><br>
-  <input type="password" id="newPassword" placeholder="新しいパスワード" /><br><br>
-  <button onclick="register()">登録</button>
-  <button onclick="backToLogin()">戻る</button>
-  <p id="registerMessage"></p>
-</div>
-
-<div class="container hidden" id="formSection">
-  <h2>日程調整アンケート</h2>
-  <p id="welcomeMsg"></p>
+ 
+    const app = initializeApp(firebaseConfig); 
+    const db = getFirestore(app); 
+ 
+    window.users = {}; 
+    window.currentUser = ""; 
+ 
+    function loadPreviousAnswers() { 
+      const answers = window.users[window.currentUser]?.answers || {}; 
+      const comment = window.users[window.currentUser]?.comment || ""; 
+      ["date1", "date2", "date3"].forEach(name => { 
+        if (answers[name]) { 
+          const el = document.querySelector(`input[name="${name}"][value="${answers[name]}"]`); 
+          if (el) el.checked = true; 
+        } 
+      }); 
+      document.getElementById("comment").value = comment; 
+    } 
+ 
+    async function showAllResults() { 
+      const tbody = document.getElementById("resultTable").querySelector("tbody"); 
+      const status = document.getElementById("maruStatusResult"); 
+      tbody.innerHTML = ""; 
+      if (status) status.textContent = ""; 
+ 
+      try { 
+        const docsArray = []; 
+        const querySnapshot = await getDocs(collection(db, "users")); 
+        querySnapshot.forEach(docSnap => { 
+          docsArray.push({ id: docSnap.id, data: docSnap.data() }); 
+        }); 
+ 
+        docsArray.sort((a, b) => { 
+          const t1 = a.data.updatedAt ? a.data.updatedAt.toMillis() : 0; 
+          const t2 = b.data.updatedAt ? b.data.updatedAt.toMillis() : 0; 
+          return t1 - t2; 
+        }); 
+ 
+        window.users = {}; 
+        const maruUsersByDate = { date1: [], date2: [], date3: [] }; 
+ 
+        docsArray.forEach(({ id, data }) => { 
+          window.users[id] = data; 
+          const ans = data.answers || {}; 
+          if (ans.date1 === "〇") maruUsersByDate.date1.push(id); 
+          if (ans.date2 === "〇") maruUsersByDate.date2.push(id); 
+          if (ans.date3 === "〇") maruUsersByDate.date3.push(id); 
+        }); 
+ 
+        const highlightedUsers = { 
+          date1: maruUsersByDate.date1.slice(0, 3), 
+          date2: maruUsersByDate.date2.slice(0, 3), 
+          date3: maruUsersByDate.date3.slice(0, 3), 
+        }; 
+ 
+        if ( 
+          maruUsersByDate.date1.length >= 3 || 
+          maruUsersByDate.date2.length >= 3 || 
+          maruUsersByDate.date3.length >= 3 
+        ) { 
+          if (status) status.textContent = "この会はすでに満席となりました。以降は観戦/リザーバー枠での参加を募集いたします。"; 
+        } 
+ 
+        docsArray.forEach(({ id, data }) => { 
+          const ans = data.answers || {}; 
+          const comment = data.comment || ""; 
+          if (!ans.date1 && !ans.date2 && !ans.date3 && !comment) return; 
+ 
+          const row = ` 
+            <tr> 
+  <td>${id}</td> 
+  <td class="${highlightedUsers.date1.length >= 3 && highlightedUsers.date1.includes(id) ? "highlight" : ""}"> 
+    ${ans.date1 || ""} 
+  </td> 
+  <td class="${highlightedUsers.date2.length >= 3 && highlightedUsers.date2.includes(id) ? "highlight" : ""}"> 
+    ${ans.date2 || ""} 
+  </td> 
+  <td class="${highlightedUsers.date3.length >= 3 && highlightedUsers.date3.includes(id) ? "highlight" : ""}"> 
+    ${ans.date3 || ""} 
+  </td> 
+  <td>${comment}</td> 
+</tr> 
+ 
+          `; 
+          tbody.innerHTML += row; 
+        }); 
+ 
+      } catch (error) { 
+        console.error("データ取得エラー:", error); 
+      } 
+    } 
+ 
+    window.showAllResults = showAllResults; 
+ 
+    window.login = async function () { 
+      const id = document.getElementById("userId").value.trim(); 
+      const pass = document.getElementById("password").value; 
+      if (!id || !pass) { 
+        document.getElementById("loginError").textContent = "IDとパスワードを入力してください。"; 
+        return; 
+      } 
+ 
+      try { 
+        const docSnap = await getDoc(doc(db, "users", id)); 
+        if (docSnap.exists()) { 
+          const data = docSnap.data(); 
+          const hashedInput = sha256(pass); 
+          if (data.password === hashedInput) { 
+            window.currentUser = id; 
+            window.users[id] = data; 
+            document.getElementById("loginSection").classList.add("hidden"); 
+            document.getElementById("formSection").classList.remove("hidden"); 
+            document.getElementById("resultSection").classList.remove("hidden"); 
+            document.getElementById("welcomeMsg").textContent = `${id} さんとしてログイン中`; 
+            loadPreviousAnswers(); 
+            await showAllResults(); 
+            document.getElementById("loginError").textContent = ""; 
+            document.getElementById("submitMessage").textContent = ""; 
+          } else { 
+            document.getElementById("loginError").textContent = "パスワードが違います。"; 
+          } 
+        } else { 
+          document.getElementById("loginError").textContent = "IDが存在しません。"; 
+        } 
+      } catch (err) { 
+        console.error(err); 
+        document.getElementById("loginError").textContent = "ログイン中にエラーが発生しました。"; 
+      } 
+    }; 
+ 
+    window.register = async function () { 
+      const id = document.getElementById("newUserId").value.trim(); 
+      const pass = document.getElementById("newPassword").value; 
+      if (!id || !pass) { 
+        document.getElementById("registerMessage").textContent = "IDとパスワードを入力してください。"; 
+        return; 
+      } 
+      if (/[<>]/.test(id)) { 
+        document.getElementById("registerMessage").textContent = "IDに < や > を含めないでください。"; 
+        return; 
+      } 
+ 
+      const docSnap = await getDoc(doc(db, "users", id)); 
+      if (docSnap.exists()) { 
+        document.getElementById("registerMessage").textContent = "このIDはすでに使われています。"; 
+      } else { 
+        const hashedPass = sha256(pass); 
+        await setDoc(doc(db, "users", id), { 
+          password: hashedPass, 
+          answers: {}, 
+          comment: "" 
+        }); 
+        document.getElementById("registerMessage").style.color = "green"; 
+        document.getElementById("registerMessage").textContent = "登録成功！ログイン画面に戻ってください。"; 
+      } 
+    }; 
+ 
+    window.showRegister = () => { 
+      document.getElementById("loginSection").classList.add("hidden"); 
+      document.getElementById("registerSection").classList.remove("hidden"); 
+    }; 
+ 
+    window.backToLogin = () => { 
+      document.getElementById("registerSection").classList.add("hidden"); 
+      document.getElementById("loginSection").classList.remove("hidden"); 
+    }; 
+ 
+    window.addEventListener("DOMContentLoaded", () => { 
+      document.getElementById("scheduleForm").addEventListener("submit", async (e) => { 
+        e.preventDefault(); 
+        if (!window.currentUser) { 
+          alert("ログインしてください。"); 
+          return; 
+        } 
+ 
+        const answers = {}; 
+        ["date1", "date2", "date3"].forEach(date => { 
+          answers[date] = document.querySelector(`input[name="${date}"]:checked`)?.value || ""; 
+        }); 
+ 
+        const comment = document.getElementById("comment").value; 
+        const prevAnswers = window.users[window.currentUser]?.answers || {}; 
+ 
+        const updateData = { 
+          answers: answers, 
+          comment: comment, 
+        }; 
+ 
+        if (JSON.stringify(answers) !== JSON.stringify(prevAnswers)) { 
+          updateData.updatedAt = serverTimestamp(); 
+        } 
+ 
+        // パスワードは含めず部分更新（merge:true）で保存 
+        await setDoc(doc(db, "users", window.currentUser), updateData, { merge: true }); 
+ 
+        window.users[window.currentUser] = { 
+          ...window.users[window.currentUser], 
+          ...updateData 
+        }; 
+ 
+        document.getElementById("submitMessage").textContent = "回答を保存しました！"; 
+        await showAllResults(); 
+      }); 
+    }); 
+  </script> 
+  <script src="https://cdn.jsdelivr.net/npm/js-sha256@0.9.0/src/sha256.min.js"></script> 
+ 
+</head> 
+<body> 
+ 
+<div class="container" id="loginSection"> 
+  <h2>ログイン</h2> 
+  <input type="text" id="userId" placeholder="ID" /><br><br> 
+  <input type="password" id="password" placeholder="パスワード" /><br><br> 
+  <button onclick="login()">ログイン</button> 
+  <button onclick="showRegister()">新規登録</button> 
+  <p id="loginError"></p> 
+</div> 
+ 
+<div class="container hidden" id="registerSection"> 
+  <h2>新規アカウント登録</h2> 
+  <input type="text" id="newUserId" placeholder="新しいID" /><br><br> 
+  <input type="password" id="newPassword" placeholder="新しいパスワード" /><br><br> 
+  <button onclick="register()">登録</button> 
+  <button onclick="backToLogin()">戻る</button> 
+  <p id="registerMessage"></p> 
+</div> 
+ 
+<div class="container hidden" id="formSection"> 
+  <h2>日程調整アンケート</h2> 
+  <p id="welcomeMsg"></p> 
   <p id="maruStatusResult" class="fullMsg"></p>
   <form id="scheduleForm">
     <table>
@@ -98,44 +316,49 @@
         <tr>
           <td>5月25日(土)</td>
           <td><label><input type="radio" name="date1" value="〇" required></label></td>
-          <td><label><input type="radio" name="date1" value="△" required></label></td>
-          <td><label><input type="radio" name="date1" value="✕" required></label></td>
+<td><label><input type="radio" name="date1" value="△" required></label></td>
+        <td><label><input type="radio" name="date1" value="✕" required></label></td>
+          
         </tr>
         <tr>
           <td>5月26日(日)</td>
           <td><label><input type="radio" name="date2" value="〇" required></label></td>
-          <td><label><input type="radio" name="date2" value="△" required></label></td>
+
+         <td><label><input type="radio" name="date2" value="△" required></label></td>
           <td><label><input type="radio" name="date2" value="✕" required></label></td>
         </tr>
         <tr>
           <td>5月29日(水)</td>
           <td><label><input type="radio" name="date3" value="〇" required></label></td>
           <td><label><input type="radio" name="date3" value="△" required></label></td>
-          <td><label><input type="radio" name="date3" value="✕" required></label></td>
+           <td><label><input type="radio" name="date3" value="✕" required></label></td>
         </tr>
       </tbody>
     </table>
     <br>
     <label>コメント（任意）:</label><br>
     <textarea id="comment" placeholder="コメントの追記のみでは列の変更は起きません。赤枠で強調表示されるのは開催される村のうち、参加エントリーが早かった方のみです。"></textarea><br><br>
-    <button type="submit">送信</button>
+    <button type="submit">送信・更新</button>
+    <p id="submitMessage"></p>
   </form>
-  <p id="submitMessage"></p>
-</div>
-
-<div class="container hidden" id="resultSection">
-  <h2>回答一覧</h2>
-  <table id="resultTable">
-    <thead>
-      <tr><th>ID</th><th>5月25日</th><th>5月26日</th><th>5月29日</th><th>コメント</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/js-sha256@0.9.0/src/sha256.min.js"></script>
-<script type="module" src="app.js"></script>
-
-</body>
-</html>
-
+</div> 
+ 
+<div class="container hidden" id="resultSection"> 
+  <h2>全回答一覧</h2> 
+  <p id="maruStatusResult"></p> 
+  <table id="resultTable"> 
+    <thead> 
+      <tr> 
+        <th>ユーザーID</th> 
+        <th>日付1</th> 
+        <th>日付2</th> 
+        <th>日付3</th> 
+        <th>コメント</th> 
+      </tr> 
+    </thead> 
+    <tbody></tbody> 
+  </table> 
+</div> 
+ 
+</body> 
+</html> 
