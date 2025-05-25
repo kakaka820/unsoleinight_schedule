@@ -1,4 +1,3 @@
-
 // Firebase モジュールのインポート
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
@@ -38,7 +37,6 @@ function loadPreviousAnswers() {
 }
 
 // 回答の集計と表示
-
 async function showAllResults() {
   const tbody = document.getElementById("resultTable").querySelector("tbody");
   const status = document.getElementById("maruStatusResult");
@@ -47,8 +45,8 @@ async function showAllResults() {
 
   try {
     // capacity の取得
-    const configSnap = await getDoc(doc(db, "config", "capacity"));
-    const MAX = configSnap.exists() ? configSnap.data().value : 3;  // デフォルト3
+    const configSnap = await getDoc(doc(db, "settings", "capacity"));
+    const MAX = configSnap.exists() ? configSnap.data().maxCapacity : 3;  // デフォルト3
     const MIN_HIGHLIGHT = MAX;
 
     const docsArray = [];
@@ -105,7 +103,6 @@ async function showAllResults() {
     console.error("データ取得エラー:", err);
   }
 }
-
 
 // ログイン機能
 window.login = async function () {
