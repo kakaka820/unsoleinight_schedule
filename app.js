@@ -1,1 +1,1 @@
-
+window.login = login;
