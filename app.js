@@ -69,7 +69,7 @@ async function showAllResults() {
     });
 
     const MAX = 3;
-    const MAX = 3;
+    const MIN_HIGHLIGHT = 3;
 const highlighted = {
   date1: maruUsers.date1.length >= MAX ? maruUsers.date1.slice(0, MAX) : [],
   date2: maruUsers.date2.length >= MAX ? maruUsers.date2.slice(0, MAX) : [],
