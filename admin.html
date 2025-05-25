@@ -61,7 +61,7 @@
   <!-- 👑 管理者用セクション -->
   <div class="container hidden" id="adminSection">
     <h2>定員数の設定</h2>
-    <p>現在の定員数: <p id="currentCapacity"></p></p>
+    <p>現在の定員数: <span id="currentCapacity">読み込み中...</span></p>
     <label for="newMax">現在の定員数を変更：</label>
     <input type="number" id="newMax" min="1" />
     <button onclick="updateMaxCapacity()">保存</button>
@@ -75,13 +75,13 @@
   <script>
     // Firebase 初期化
     const firebaseConfig = {
-  apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
-  authDomain: "unsoleinight-schedule.firebaseapp.com",
-  projectId: "unsoleinight-schedule",
-  storageBucket: "unsoleinight-schedule.firebasestorage.app",
-  messagingSenderId: "1040333692698",
-  appId: "1:1040333692698:web:fb0e4f481dff8167f756a3"
-};
+      apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
+      authDomain: "unsoleinight-schedule.firebaseapp.com",
+      projectId: "unsoleinight-schedule",
+      storageBucket: "unsoleinight-schedule.firebasestorage.app",
+      messagingSenderId: "1040333692698",
+      appId: "1:1040333692698:web:fb0e4f481dff8167f756a3"
+    };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const { doc, getDoc, setDoc } = firebase.firestore;
@@ -96,13 +96,14 @@
         document.getElementById("loginSection").classList.add("hidden");
         document.getElementById("adminSection").classList.remove("hidden");
         loginMsg.textContent = "";
+        displayMaxCapacity(); // ✅ 定員表示処理を呼び出す
       } else {
         loginMsg.textContent = "IDまたはパスワードが違います";
         loginMsg.style.color = "red";
       }
     }
 
-    // 定員をFirestoreから取得
+    // Firestoreから定員を取得して返す
     async function getMaxCapacity() {
       try {
         const docRef = doc(db, "settings", "capacity");
@@ -115,6 +116,12 @@
         console.error("定員取得エラー:", e);
       }
       return 3; // デフォルト値
+    }
+
+    // 定員を表示する関数（UI反映）
+    async function displayMaxCapacity() {
+      const capacity = await getMaxCapacity();
+      document.getElementById("currentCapacity").textContent = capacity + "人";
     }
 
     // Firestoreの定員数を更新
@@ -132,6 +139,7 @@
         await setDoc(doc(db, "settings", "capacity"), { maxCapacity: newMax });
         msg.textContent = "定員を更新しました。";
         msg.style.color = "green";
+        displayMaxCapacity(); // ✅ 更新後に再表示
       } catch (e) {
         console.error("更新エラー:", e);
         msg.textContent = "定員の更新に失敗しました。";
