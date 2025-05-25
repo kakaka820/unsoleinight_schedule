@@ -38,6 +38,7 @@ function loadPreviousAnswers() {
 }
 
 // 回答の集計と表示
+
 async function showAllResults() {
   const tbody = document.getElementById("resultTable").querySelector("tbody");
   const status = document.getElementById("maruStatusResult");
@@ -45,6 +46,11 @@ async function showAllResults() {
   if (status) status.textContent = "";
 
   try {
+    // capacity の取得
+    const configSnap = await getDoc(doc(db, "config", "capacity"));
+    const MAX = configSnap.exists() ? configSnap.data().value : 3;  // デフォルト3
+    const MIN_HIGHLIGHT = MAX;
+
     const docsArray = [];
     const snapshot = await getDocs(collection(db, "users"));
     snapshot.forEach(docSnap => {
@@ -68,14 +74,11 @@ async function showAllResults() {
       if (a.date3 === "〇") maruUsers.date3.push(id);
     });
 
-    const MAX = 3;
-    const MIN_HIGHLIGHT = 3;
-const highlighted = {
-  date1: maruUsers.date1.length >= MAX ? maruUsers.date1.slice(0, MAX) : [],
-  date2: maruUsers.date2.length >= MAX ? maruUsers.date2.slice(0, MAX) : [],
-  date3: maruUsers.date3.length >= MAX ? maruUsers.date3.slice(0, MAX) : [],
-};
-
+    const highlighted = {
+      date1: maruUsers.date1.length >= MAX ? maruUsers.date1.slice(0, MAX) : [],
+      date2: maruUsers.date2.length >= MAX ? maruUsers.date2.slice(0, MAX) : [],
+      date3: maruUsers.date3.length >= MAX ? maruUsers.date3.slice(0, MAX) : [],
+    };
 
     if (Object.values(maruUsers).some(arr => arr.length >= MAX)) {
       if (status) status.textContent = "この会はすでに満席となりました。以降は観戦/リザーバー枠での参加を募集いたします。";
@@ -103,7 +106,6 @@ const highlighted = {
   }
 }
 
-window.showAllResults = showAllResults;
 
 // ログイン機能
 window.login = async function () {
