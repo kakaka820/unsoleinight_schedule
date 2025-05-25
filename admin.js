@@ -23,7 +23,7 @@ const db = getFirestore(app);
 // 定員数を表示する関数
 async function displayCurrentCapacity() {
   try {
-    const docRef = doc(db, "settings", "limit");
+    const docRef = doc(db, "settings", "capacity");
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
