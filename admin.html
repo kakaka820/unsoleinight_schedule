@@ -1,262 +1,170 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>管理画面（簡易ログイン）</title>
+  <meta charset="UTF-8">
+  <title>管理画面</title>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
   <style>
     body {
-      font-family: "Segoe UI", sans-serif;
-      margin: 40px;
-      background-color: #f8f9fa;
+      font-family: Arial, sans-serif;
+      margin: 2em;
+      background-color: #f9f9f9;
       color: #333;
     }
-
-    h1, h2 {
-      color: #2c3e50;
-    }
-
-    input, button {
-      padding: 8px;
-      margin: 5px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-    }
-
-    button {
-      background-color: #007bff;
-      color: white;
-      cursor: pointer;
-      border: none;
-    }
-
-    button:hover {
-      background-color: #0056b3;
-    }
-
-    #logFilter {
-      display: flex;
-      gap: 20px;
-      margin: 20px 0;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background-color: white;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    th, td {
-      padding: 12px 16px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
-    }
-
-    th {
-      background-color: #343a40;
-      color: white;
-    }
-
-    tr:nth-child(even) {
-      background-color: #f2f2f2;
-    }
-
-    .section {
-      margin-bottom: 40px;
-    }
-
-    #loginSection {
-      max-width: 400px;
+    .container {
+      max-width: 700px;
       margin: auto;
-      text-align: center;
-      padding: 30px;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-
-    #adminSection {
+    h1 {
+      text-align: center;
+      margin-bottom: 1em;
+    }
+    .section {
+      background: white;
+      padding: 1em;
+      margin-bottom: 1.5em;
+      border-radius: 8px;
+      box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+    }
+    input, button {
+      padding: 0.5em;
+      margin: 0.5em 0;
+    }
+    ul {
+      padding-left: 1.5em;
+    }
+    .hidden {
       display: none;
     }
-
-    .logout-btn {
-      background-color: #dc3545;
-      margin-left: 10px;
-    }
-
-    .logout-btn:hover {
-      background-color: #a71d2a;
+    .log-entry {
+      margin-bottom: 0.5em;
+      padding-bottom: 0.5em;
+      border-bottom: 1px solid #ddd;
     }
   </style>
 </head>
 <body>
-  <!-- ログイン画面 -->
-  <div id="loginSection">
-    <h1>管理者ログイン</h1>
-    <input type="text" id="loginID" placeholder="ユーザーID" /><br />
-    <input type="password" id="loginPW" placeholder="パスワード" /><br />
-    <button onclick="login()">ログイン</button>
-  </div>
+  <div class="container">
 
-  <!-- 管理画面 -->
-  <div id="adminSection">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <h1>日程管理</h1>
+    <div id="loginSection" class="section">
+      <h2>管理者ログイン</h2>
+      <input type="text" id="adminId" placeholder="ID"><br>
+      <input type="password" id="adminPassword" placeholder="パスワード"><br>
+      <button onclick="login()">ログイン</button>
+      <p id="loginError" style="color: red;"></p>
+    </div>
+
+    <div id="adminPanel" class="section hidden">
+      <h1>日程調整・管理画面</h1>
+
       <div>
-        <span id="userEmail">admin</span>
-        <button class="logout-btn" onclick="logout()">ログアウト</button>
+        <h3>候補日を追加</h3>
+        <input type="text" id="newDate" placeholder="例: 2025-06-15 14:00">
+        <button onclick="addDate()">追加</button>
+      </div>
+
+      <div>
+        <h3>既存の候補日</h3>
+        <ul id="dateList"></ul>
+      </div>
+
+      <div>
+        <h3>変更ログ</h3>
+        <button onclick="fetchLogs()">ログを再読み込み</button>
+        <div id="logList"></div>
       </div>
     </div>
 
-    <div class="section">
-      <input type="date" id="dateInput" />
-      <button onclick="addDate()">日程追加</button>
-      <button onclick="removeDate()">日程削除</button>
-    </div>
-
-    <div class="section">
-      <h2>変更ログ</h2>
-
-      <div id="logFilter">
-        <label>
-          日付で絞り込み：
-          <input type="date" id="dateFilter" />
-        </label>
-        <button id="applyFilterBtn">絞り込み</button>
-        <button id="clearFilterBtn">クリア</button>
-      </div>
-
-      <table id="logTable">
-        <thead>
-          <tr>
-            <th>ユーザー</th>
-            <th>対象日付</th>
-            <th>操作</th>
-            <th>変更時刻</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
   </div>
 
-  <!-- Firebase SDK は別途読み込みが必要 -->
   <script>
+    // Firebase 初期化
+    const firebaseConfig = {
+  apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
+  authDomain: "unsoleinight-schedule.firebaseapp.com",
+  projectId: "unsoleinight-schedule",
+  storageBucket: "unsoleinight-schedule.firebasestorage.app",
+  messagingSenderId: "1040333692698",
+  appId: "1:1040333692698:web:fb0e4f481dff8167f756a3"
+};
+    firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const FIXED_ID = "admin";
-    const FIXED_PW = "password123";
 
-    let allLogs = [];
+    // 固定ログイン情報（開発用）
+    const FIXED_ID = "admin";
+    const FIXED_PASSWORD = "password123";
 
     function login() {
-      const id = document.getElementById("loginID").value.trim();
-      const pw = document.getElementById("loginPW").value.trim();
-
-      if (id === FIXED_ID && pw === FIXED_PW) {
-        document.getElementById("loginSection").style.display = "none";
-        document.getElementById("adminSection").style.display = "block";
-        loadLogs();
+      const inputId = document.getElementById("adminId").value;
+      const inputPassword = document.getElementById("adminPassword").value;
+      if (inputId === FIXED_ID && inputPassword === FIXED_PASSWORD) {
+        document.getElementById("loginSection").classList.add("hidden");
+        document.getElementById("adminPanel").classList.remove("hidden");
+        loadDates();
+        fetchLogs();
       } else {
-        alert("IDまたはパスワードが間違っています");
+        document.getElementById("loginError").textContent = "IDまたはパスワードが間違っています";
       }
     }
 
-    function logout() {
-      document.getElementById("loginSection").style.display = "block";
-      document.getElementById("adminSection").style.display = "none";
-    }
-
-    async function addDate() {
-      const date = document.getElementById("dateInput").value;
-      if (!date) return alert("日付を入力してください");
-
-      try {
-        await db.collection("dates").add({ date });
-        await db.collection("logs").add({
-          action: "add",
-          date,
-          uid: "admin",
-          email: "admin@example.com",
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        alert("日程を追加しました");
-        loadLogs();
-      } catch (e) {
-        console.error("追加エラー:", e);
-        alert("日程の追加に失敗しました");
-      }
-    }
-
-    async function removeDate() {
-      const date = document.getElementById("dateInput").value;
-      if (!date) return alert("日付を入力してください");
-
-      try {
-        const snapshot = await db.collection("dates").where("date", "==", date).get();
-        const batch = db.batch();
-        snapshot.forEach(doc => batch.delete(doc.ref));
-        await batch.commit();
-
-        await db.collection("logs").add({
-          action: "remove",
-          date,
-          uid: "admin",
-          email: "admin@example.com",
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        alert("日程を削除しました");
-        loadLogs();
-      } catch (e) {
-        console.error("削除エラー:", e);
-        alert("日程の削除に失敗しました");
-      }
-    }
-
-    async function loadLogs() {
-      try {
-        const snapshot = await db.collection("logs").orderBy("timestamp", "desc").limit(100).get();
-        allLogs = snapshot.docs.map(doc => doc.data());
-        displayLogs(allLogs);
-      } catch (e) {
-        console.error("ログ読み込みエラー:", e);
-      }
-    }
-
-    function displayLogs(logs) {
-      const tbody = document.querySelector("#logTable tbody");
-      tbody.innerHTML = "";
-      logs.forEach(log => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${log.email || ""}</td>
-          <td>${log.date || ""}</td>
-          <td>${log.action === "add" ? "追加" : log.action === "remove" ? "削除" : ""}</td>
-          <td>${log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleString() : ""}</td>
-        `;
-        tbody.appendChild(tr);
+    async function loadDates() {
+      const list = document.getElementById("dateList");
+      list.innerHTML = "";
+      const snapshot = await db.collection("dates").orderBy("value").get();
+      snapshot.forEach(doc => {
+        const li = document.createElement("li");
+        li.textContent = doc.id;
+        const btn = document.createElement("button");
+        btn.textContent = "削除";
+        btn.onclick = () => removeDate(doc.id);
+        li.appendChild(btn);
+        list.appendChild(li);
       });
     }
 
-    document.getElementById("applyFilterBtn").addEventListener("click", () => {
-      const dateFilter = document.getElementById("dateFilter").value;
-      let filtered = allLogs;
+    async function addDate() {
+      const newDate = document.getElementById("newDate").value.trim();
+      if (!newDate) return alert("日付を入力してください");
+      await db.collection("dates").doc(newDate).set({ value: newDate });
+      await db.collection("logs").add({
+        timestamp: new Date(),
+        action: "追加",
+        date: newDate,
+        actor: "admin"
+      });
+      document.getElementById("newDate").value = "";
+      loadDates();
+      fetchLogs();
+    }
 
-      if (dateFilter) {
-        filtered = filtered.filter(log =>
-          log.timestamp && new Date(log.timestamp.seconds * 1000).toISOString().slice(0, 10) === dateFilter
-        );
-      }
+    async function removeDate(date) {
+      if (!confirm(`${date} を削除しますか？`)) return;
+      await db.collection("dates").doc(date).delete();
+      await db.collection("logs").add({
+        timestamp: new Date(),
+        action: "削除",
+        date: date,
+        actor: "admin"
+      });
+      loadDates();
+      fetchLogs();
+    }
 
-      displayLogs(filtered);
-    });
-
-    document.getElementById("clearFilterBtn").addEventListener("click", () => {
-      document.getElementById("dateFilter").value = "";
-      displayLogs(allLogs);
-    });
+    async function fetchLogs() {
+      const container = document.getElementById("logList");
+      container.innerHTML = "";
+      const snapshot = await db.collection("logs").orderBy("timestamp", "desc").limit(50).get();
+      snapshot.forEach(doc => {
+        const log = doc.data();
+        const div = document.createElement("div");
+        div.classList.add("log-entry");
+        const date = log.timestamp.toDate().toLocaleString();
+        div.textContent = `[${date}] ${log.actor} が「${log.date}」を ${log.action}`;
+        container.appendChild(div);
+      });
+    }
   </script>
 </body>
 </html>
