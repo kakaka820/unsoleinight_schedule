@@ -178,7 +178,7 @@
         const delBtn = document.createElement("button");
         delBtn.textContent = "削除";
         delBtn.addEventListener("click", () => {
-          if (confirm(`「${date}」の日程を本当に削除しますか？`)) {
+          if (confirm(`今削除しようとしているのは「${date}」の日程です。本当に削除しますか？`)) {
             removeDate(date);
           }
         });
