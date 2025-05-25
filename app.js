@@ -69,11 +69,13 @@ async function showAllResults() {
     });
 
     const MAX = 3;
-    const highlighted = {
-      date1: maruUsers.date1.slice(0, MAX),
-      date2: maruUsers.date2.slice(0, MAX),
-      date3: maruUsers.date3.slice(0, MAX),
-    };
+    const MAX = 3;
+const highlighted = {
+  date1: maruUsers.date1.length >= MAX ? maruUsers.date1.slice(0, MAX) : [],
+  date2: maruUsers.date2.length >= MAX ? maruUsers.date2.slice(0, MAX) : [],
+  date3: maruUsers.date3.length >= MAX ? maruUsers.date3.slice(0, MAX) : [],
+};
+
 
     if (Object.values(maruUsers).some(arr => arr.length >= MAX)) {
       if (status) status.textContent = "この会はすでに満席となりました。以降は観戦/リザーバー枠での参加を募集いたします。";
