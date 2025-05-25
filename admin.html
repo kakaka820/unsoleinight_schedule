@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>管理画面</title>
+  <title>管理画面（簡易ログイン）</title>
   <style>
     body {
       font-family: "Segoe UI", sans-serif;
@@ -96,8 +96,8 @@
   <!-- ログイン画面 -->
   <div id="loginSection">
     <h1>管理者ログイン</h1>
-    <input type="email" id="loginEmail" placeholder="メールアドレス" /><br />
-    <input type="password" id="loginPassword" placeholder="パスワード" /><br />
+    <input type="text" id="loginID" placeholder="ユーザーID" /><br />
+    <input type="password" id="loginPW" placeholder="パスワード" /><br />
     <button onclick="login()">ログイン</button>
   </div>
 
@@ -106,7 +106,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center;">
       <h1>日程管理</h1>
       <div>
-        <span id="userEmail"></span>
+        <span id="userEmail">admin</span>
         <button class="logout-btn" onclick="logout()">ログアウト</button>
       </div>
     </div>
@@ -122,10 +122,6 @@
 
       <div id="logFilter">
         <label>
-          メールアドレスで絞り込み：
-          <input type="text" id="emailFilter" placeholder="admin@example.com" />
-        </label>
-        <label>
           日付で絞り込み：
           <input type="date" id="dateFilter" />
         </label>
@@ -136,8 +132,7 @@
       <table id="logTable">
         <thead>
           <tr>
-            <th>ユーザーID</th>
-            <th>メールアドレス</th>
+            <th>ユーザー</th>
             <th>対象日付</th>
             <th>操作</th>
             <th>変更時刻</th>
@@ -148,40 +143,43 @@
     </div>
   </div>
 
-  <!-- Firebase SDKは自分の環境に合わせて読み込み済みである前提 -->
+  <!-- Firebase SDK は別途読み込みが必要 -->
   <script>
     const db = firebase.firestore();
-    const auth = firebase.auth();
+    const FIXED_ID = "admin";
+    const FIXED_PW = "password123";
+
     let allLogs = [];
 
     function login() {
-      const email = document.getElementById("loginEmail").value;
-      const password = document.getElementById("loginPassword").value;
-      auth.signInWithEmailAndPassword(email, password)
-        .then(() => {
-          console.log("ログイン成功");
-        })
-        .catch(error => {
-          alert("ログイン失敗: " + error.message);
-        });
+      const id = document.getElementById("loginID").value.trim();
+      const pw = document.getElementById("loginPW").value.trim();
+
+      if (id === FIXED_ID && pw === FIXED_PW) {
+        document.getElementById("loginSection").style.display = "none";
+        document.getElementById("adminSection").style.display = "block";
+        loadLogs();
+      } else {
+        alert("IDまたはパスワードが間違っています");
+      }
     }
 
     function logout() {
-      auth.signOut();
+      document.getElementById("loginSection").style.display = "block";
+      document.getElementById("adminSection").style.display = "none";
     }
 
     async function addDate() {
       const date = document.getElementById("dateInput").value;
-      const user = auth.currentUser;
-      if (!date || !user) return alert("日付またはログイン情報が不足しています");
+      if (!date) return alert("日付を入力してください");
 
       try {
         await db.collection("dates").add({ date });
         await db.collection("logs").add({
           action: "add",
           date,
-          uid: user.uid,
-          email: user.email,
+          uid: "admin",
+          email: "admin@example.com",
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
         alert("日程を追加しました");
@@ -194,8 +192,7 @@
 
     async function removeDate() {
       const date = document.getElementById("dateInput").value;
-      const user = auth.currentUser;
-      if (!date || !user) return alert("日付またはログイン情報が不足しています");
+      if (!date) return alert("日付を入力してください");
 
       try {
         const snapshot = await db.collection("dates").where("date", "==", date).get();
@@ -206,8 +203,8 @@
         await db.collection("logs").add({
           action: "remove",
           date,
-          uid: user.uid,
-          email: user.email,
+          uid: "admin",
+          email: "admin@example.com",
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
         alert("日程を削除しました");
@@ -234,7 +231,6 @@
       logs.forEach(log => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${log.uid || ""}</td>
           <td>${log.email || ""}</td>
           <td>${log.date || ""}</td>
           <td>${log.action === "add" ? "追加" : log.action === "remove" ? "削除" : ""}</td>
@@ -245,37 +241,21 @@
     }
 
     document.getElementById("applyFilterBtn").addEventListener("click", () => {
-      const emailFilter = document.getElementById("emailFilter").value.trim().toLowerCase();
       const dateFilter = document.getElementById("dateFilter").value;
-
       let filtered = allLogs;
-      if (emailFilter) {
-        filtered = filtered.filter(log => (log.email || "").toLowerCase().includes(emailFilter));
-      }
+
       if (dateFilter) {
         filtered = filtered.filter(log =>
           log.timestamp && new Date(log.timestamp.seconds * 1000).toISOString().slice(0, 10) === dateFilter
         );
       }
+
       displayLogs(filtered);
     });
 
     document.getElementById("clearFilterBtn").addEventListener("click", () => {
-      document.getElementById("emailFilter").value = "";
       document.getElementById("dateFilter").value = "";
       displayLogs(allLogs);
-    });
-
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        document.getElementById("loginSection").style.display = "none";
-        document.getElementById("adminSection").style.display = "block";
-        document.getElementById("userEmail").textContent = user.email;
-        loadLogs();
-      } else {
-        document.getElementById("loginSection").style.display = "block";
-        document.getElementById("adminSection").style.display = "none";
-      }
     });
   </script>
 </body>
