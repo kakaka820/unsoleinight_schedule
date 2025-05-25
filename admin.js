@@ -1,3 +1,7 @@
+なんかしらんがうまく機能しないので、今は管理画面はHTML一本で動かしてます。
+  最終的に機能がすべてそろったらその時JSと分けてください。
+
+
 // Firebase 初期化
 const firebaseConfig = {
   apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
