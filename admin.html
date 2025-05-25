@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>管理者画面 - 定員設定</title>
+  <title>管理者画面 - 定員設定＆日程管理</title>
   <style>
     body {
       font-family: sans-serif;
@@ -23,7 +23,8 @@
       display: block;
       margin-top: 12px;
     }
-    input {
+    input[type="text"],
+    input[type="number"] {
       padding: 8px;
       width: 100%;
       box-sizing: border-box;
@@ -37,6 +38,7 @@
       color: white;
       border: none;
       border-radius: 4px;
+      cursor: pointer;
     }
     button:hover {
       background-color: #45a049;
@@ -44,6 +46,20 @@
     .status-message {
       margin-top: 10px;
       font-weight: bold;
+    }
+    ul {
+      padding-left: 20px;
+      margin-top: 8px;
+    }
+    li {
+      margin-bottom: 6px;
+    }
+    li button {
+      margin-left: 10px;
+      background-color: #e74c3c;
+    }
+    li button:hover {
+      background-color: #c0392b;
     }
   </style>
 </head>
@@ -65,6 +81,15 @@
     <input type="number" id="newMax" min="1" />
     <button onclick="updateMaxCapacity()">保存</button>
     <p id="adminMessage" class="status-message"></p>
+
+    <hr style="margin: 24px 0;" />
+
+    <h2>イベント日程の管理</h2>
+    <label for="newDateInput">新しい日程を追加：</label>
+    <input type="text" id="newDateInput" placeholder="例：2025-06-01 19:00〜" />
+    <button id="addDateBtn">追加</button>
+    <ul id="datesList"></ul>
+    <p id="datesMessage" class="status-message"></p>
   </div>
 
   <!-- Firebase SDKs -->
@@ -84,7 +109,8 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Firestoreから定員を取得して表示
+    // --- 定員管理部分 ---
+
     async function getMaxCapacity() {
       try {
         const docRef = db.collection("settings").doc("capacity");
@@ -104,7 +130,6 @@
       document.getElementById("currentCapacity").textContent = current + "人";
     }
 
-    // 定員を更新
     async function updateMaxCapacity() {
       const newMax = parseInt(document.getElementById("newMax").value);
       const msg = document.getElementById("adminMessage");
@@ -127,7 +152,77 @@
       }
     }
 
-    // 管理者ログイン処理（ハードコード）
+    // --- 日程管理部分 ---
+
+    async function loadEventDates() {
+      try {
+        const docRef = db.collection("settings").doc("eventDates");
+        const docSnap = await docRef.get();
+        if (docSnap.exists) {
+          return docSnap.data().list || [];
+        }
+      } catch (e) {
+        console.error("日程読み込みエラー:", e);
+      }
+      return [];
+    }
+
+    function renderDatesList(dates) {
+      const ul = document.getElementById("datesList");
+      ul.innerHTML = "";
+      dates.forEach(date => {
+        const li = document.createElement("li");
+        li.textContent = date;
+
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "削除";
+        delBtn.addEventListener("click", () => {
+          removeDate(date);
+        });
+
+        li.appendChild(delBtn);
+        ul.appendChild(li);
+      });
+    }
+
+    async function addDate(newDate) {
+      const msg = document.getElementById("datesMessage");
+      try {
+        const docRef = db.collection("settings").doc("eventDates");
+        await docRef.update({
+          list: firebase.firestore.FieldValue.arrayUnion(newDate)
+        });
+        msg.textContent = "日程を追加しました。";
+        msg.style.color = "green";
+        const dates = await loadEventDates();
+        renderDatesList(dates);
+      } catch (e) {
+        console.error("日程追加エラー:", e);
+        msg.textContent = "日程の追加に失敗しました。";
+        msg.style.color = "red";
+      }
+    }
+
+    async function removeDate(date) {
+      const msg = document.getElementById("datesMessage");
+      try {
+        const docRef = db.collection("settings").doc("eventDates");
+        await docRef.update({
+          list: firebase.firestore.FieldValue.arrayRemove(date)
+        });
+        msg.textContent = "日程を削除しました。";
+        msg.style.color = "green";
+        const dates = await loadEventDates();
+        renderDatesList(dates);
+      } catch (e) {
+        console.error("日程削除エラー:", e);
+        msg.textContent = "日程の削除に失敗しました。";
+        msg.style.color = "red";
+      }
+    }
+
+    // --- ログイン処理 ---
+
     function login() {
       const id = document.getElementById("adminId").value;
       const pw = document.getElementById("adminPw").value;
@@ -138,11 +233,27 @@
         document.getElementById("adminSection").classList.remove("hidden");
         loginMsg.textContent = "";
         displayMaxCapacity();
+
+        // 日程ロード＆表示
+        loadEventDates().then(renderDatesList);
       } else {
         loginMsg.textContent = "IDまたはパスワードが違います";
         loginMsg.style.color = "red";
       }
     }
+
+    // --- イベント登録 ---
+
+    document.getElementById("addDateBtn").addEventListener("click", () => {
+      const input = document.getElementById("newDateInput");
+      const newDate = input.value.trim();
+      if (!newDate) {
+        alert("日程を入力してください。");
+        return;
+      }
+      addDate(newDate);
+      input.value = "";
+    });
   </script>
 </body>
 </html>
