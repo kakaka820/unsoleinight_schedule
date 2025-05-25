@@ -15,7 +15,7 @@
       color: #2c3e50;
     }
 
-    input, button, select {
+    input, button {
       padding: 8px;
       margin: 5px;
       border-radius: 4px;
@@ -67,51 +67,108 @@
     .section {
       margin-bottom: 40px;
     }
+
+    #loginSection {
+      max-width: 400px;
+      margin: auto;
+      text-align: center;
+      padding: 30px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    #adminSection {
+      display: none;
+    }
+
+    .logout-btn {
+      background-color: #dc3545;
+      margin-left: 10px;
+    }
+
+    .logout-btn:hover {
+      background-color: #a71d2a;
+    }
   </style>
 </head>
 <body>
-  <div class="section">
-    <h1>日程管理</h1>
-    <input type="date" id="dateInput" />
-    <button onclick="addDate()">日程追加</button>
-    <button onclick="removeDate()">日程削除</button>
+  <!-- ログイン画面 -->
+  <div id="loginSection">
+    <h1>管理者ログイン</h1>
+    <input type="email" id="loginEmail" placeholder="メールアドレス" /><br />
+    <input type="password" id="loginPassword" placeholder="パスワード" /><br />
+    <button onclick="login()">ログイン</button>
   </div>
 
-  <div class="section">
-    <h2>変更ログ</h2>
-
-    <div id="logFilter">
-      <label>
-        メールアドレスで絞り込み：
-        <input type="text" id="emailFilter" placeholder="admin@example.com" />
-      </label>
-      <label>
-        日付で絞り込み：
-        <input type="date" id="dateFilter" />
-      </label>
-      <button id="applyFilterBtn">絞り込み</button>
-      <button id="clearFilterBtn">クリア</button>
+  <!-- 管理画面 -->
+  <div id="adminSection">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h1>日程管理</h1>
+      <div>
+        <span id="userEmail"></span>
+        <button class="logout-btn" onclick="logout()">ログアウト</button>
+      </div>
     </div>
 
-    <table id="logTable">
-      <thead>
-        <tr>
-          <th>ユーザーID</th>
-          <th>メールアドレス</th>
-          <th>対象日付</th>
-          <th>操作</th>
-          <th>変更時刻</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="section">
+      <input type="date" id="dateInput" />
+      <button onclick="addDate()">日程追加</button>
+      <button onclick="removeDate()">日程削除</button>
+    </div>
+
+    <div class="section">
+      <h2>変更ログ</h2>
+
+      <div id="logFilter">
+        <label>
+          メールアドレスで絞り込み：
+          <input type="text" id="emailFilter" placeholder="admin@example.com" />
+        </label>
+        <label>
+          日付で絞り込み：
+          <input type="date" id="dateFilter" />
+        </label>
+        <button id="applyFilterBtn">絞り込み</button>
+        <button id="clearFilterBtn">クリア</button>
+      </div>
+
+      <table id="logTable">
+        <thead>
+          <tr>
+            <th>ユーザーID</th>
+            <th>メールアドレス</th>
+            <th>対象日付</th>
+            <th>操作</th>
+            <th>変更時刻</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 
+  <!-- Firebase SDKは自分の環境に合わせて読み込み済みである前提 -->
   <script>
     const db = firebase.firestore();
     const auth = firebase.auth();
-
     let allLogs = [];
+
+    function login() {
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+          console.log("ログイン成功");
+        })
+        .catch(error => {
+          alert("ログイン失敗: " + error.message);
+        });
+    }
+
+    function logout() {
+      auth.signOut();
+    }
 
     async function addDate() {
       const date = document.getElementById("dateInput").value;
@@ -120,7 +177,6 @@
 
       try {
         await db.collection("dates").add({ date });
-
         await db.collection("logs").add({
           action: "add",
           date,
@@ -128,7 +184,6 @@
           email: user.email,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-
         alert("日程を追加しました");
         loadLogs();
       } catch (e) {
@@ -155,7 +210,6 @@
           email: user.email,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-
         alert("日程を削除しました");
         loadLogs();
       } catch (e) {
@@ -166,11 +220,7 @@
 
     async function loadLogs() {
       try {
-        const snapshot = await db.collection("logs")
-          .orderBy("timestamp", "desc")
-          .limit(100)
-          .get();
-
+        const snapshot = await db.collection("logs").orderBy("timestamp", "desc").limit(100).get();
         allLogs = snapshot.docs.map(doc => doc.data());
         displayLogs(allLogs);
       } catch (e) {
@@ -217,8 +267,15 @@
     });
 
     auth.onAuthStateChanged(user => {
-      if (user) loadLogs();
-      else alert("ログインしていません");
+      if (user) {
+        document.getElementById("loginSection").style.display = "none";
+        document.getElementById("adminSection").style.display = "block";
+        document.getElementById("userEmail").textContent = user.email;
+        loadLogs();
+      } else {
+        document.getElementById("loginSection").style.display = "block";
+        document.getElementById("adminSection").style.display = "none";
+      }
     });
   </script>
 </body>
