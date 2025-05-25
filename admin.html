@@ -61,6 +61,7 @@
   <!-- 👑 管理者用セクション -->
   <div class="container hidden" id="adminSection">
     <h2>定員数の設定</h2>
+    <p>現在の定員数: <span id="currentCapacity">読み込み中...</span></p>
     <label for="newMax">現在の定員数を変更：</label>
     <input type="number" id="newMax" min="1" />
     <button onclick="updateMaxCapacity()">保存</button>
