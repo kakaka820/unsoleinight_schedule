@@ -44,16 +44,15 @@ async function showAllResults() {
   if (status) status.textContent = "";
 
   try {
-    // capacity の取得
     const configSnap = await getDoc(doc(db, "settings", "capacity"));
-    const MAX = configSnap.exists() ? configSnap.data().maxCapacity : 3;  // デフォルト3
-    const configSnap = await getDoc(doc(db, "settings", "capacity"));
-if (configSnap.exists()) {
-  console.log("FirestoreからのmaxCapacity:", configSnap.data().maxCapacity);
-} else {
-  console.warn("settings/capacity ドキュメントが見つかりません。デフォルト値を使用します。");
-}
-const MAX = configSnap.exists() ? configSnap.data().maxCapacity : 3;
+    let MAX;
+    if (configSnap.exists()) {
+      MAX = configSnap.data().maxCapacity;
+      console.log("Firestoreから取得した maxCapacity:", MAX);
+    } else {
+      console.warn("settings/capacity ドキュメントが見つかりません。デフォルト値 3 を使用します。");
+      MAX = 3;
+    }
 
     const MIN_HIGHLIGHT = MAX;
 
@@ -111,6 +110,9 @@ const MAX = configSnap.exists() ? configSnap.data().maxCapacity : 3;
     console.error("データ取得エラー:", err);
   }
 }
+
+// 以下、login/registerなどは元のまま省略（必要なら展開します）
+
 
 // ログイン機能
 window.login = async function () {
