@@ -3,43 +3,109 @@
 <head>
   <meta charset="UTF-8" />
   <title>管理画面</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      margin: 40px;
+      background-color: #f8f9fa;
+      color: #333;
+    }
+
+    h1, h2 {
+      color: #2c3e50;
+    }
+
+    input, button, select {
+      padding: 8px;
+      margin: 5px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      border: none;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #logFilter {
+      display: flex;
+      gap: 20px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #343a40;
+      color: white;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+
+    .section {
+      margin-bottom: 40px;
+    }
+  </style>
 </head>
 <body>
-  <h1>日程管理</h1>
+  <div class="section">
+    <h1>日程管理</h1>
+    <input type="date" id="dateInput" />
+    <button onclick="addDate()">日程追加</button>
+    <button onclick="removeDate()">日程削除</button>
+  </div>
 
-  <input type="date" id="dateInput" />
-  <button onclick="addDate()">日程追加</button>
-  <button onclick="removeDate()">日程削除</button>
+  <div class="section">
+    <h2>変更ログ</h2>
 
-  <h2>変更ログ</h2>
-
-  <div id="logFilter">
-    <div>
-      <label for="emailFilter">メールアドレスで絞り込み：</label>
-      <input type="text" id="emailFilter" placeholder="admin@example.com" />
-    </div>
-    <div>
-      <label for="dateFilter">日付で絞り込み：</label>
-      <input type="date" id="dateFilter" />
-    </div>
-    <div>
+    <div id="logFilter">
+      <label>
+        メールアドレスで絞り込み：
+        <input type="text" id="emailFilter" placeholder="admin@example.com" />
+      </label>
+      <label>
+        日付で絞り込み：
+        <input type="date" id="dateFilter" />
+      </label>
       <button id="applyFilterBtn">絞り込み</button>
       <button id="clearFilterBtn">クリア</button>
     </div>
-  </div>
 
-  <table id="logTable">
-    <thead>
-      <tr>
-        <th>ユーザーID</th>
-        <th>メールアドレス</th>
-        <th>対象日付</th>
-        <th>操作</th>
-        <th>変更時刻</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+    <table id="logTable">
+      <thead>
+        <tr>
+          <th>ユーザーID</th>
+          <th>メールアドレス</th>
+          <th>対象日付</th>
+          <th>操作</th>
+          <th>変更時刻</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
   <script>
     const db = firebase.firestore();
@@ -47,20 +113,17 @@
 
     let allLogs = [];
 
-    // 日程追加
     async function addDate() {
       const date = document.getElementById("dateInput").value;
       const user = auth.currentUser;
-
       if (!date || !user) return alert("日付またはログイン情報が不足しています");
 
       try {
         await db.collection("dates").add({ date });
 
-        // ログを記録
         await db.collection("logs").add({
           action: "add",
-          date: date,
+          date,
           uid: user.uid,
           email: user.email,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
@@ -74,24 +137,20 @@
       }
     }
 
-    // 日程削除
     async function removeDate() {
       const date = document.getElementById("dateInput").value;
       const user = auth.currentUser;
-
       if (!date || !user) return alert("日付またはログイン情報が不足しています");
 
       try {
         const snapshot = await db.collection("dates").where("date", "==", date).get();
-
         const batch = db.batch();
         snapshot.forEach(doc => batch.delete(doc.ref));
         await batch.commit();
 
-        // ログを記録
         await db.collection("logs").add({
           action: "remove",
-          date: date,
+          date,
           uid: user.uid,
           email: user.email,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
@@ -140,15 +199,14 @@
       const dateFilter = document.getElementById("dateFilter").value;
 
       let filtered = allLogs;
-
       if (emailFilter) {
         filtered = filtered.filter(log => (log.email || "").toLowerCase().includes(emailFilter));
       }
-
       if (dateFilter) {
-        filtered = filtered.filter(log => (log.timestamp && new Date(log.timestamp.seconds * 1000).toISOString().slice(0, 10) === dateFilter));
+        filtered = filtered.filter(log =>
+          log.timestamp && new Date(log.timestamp.seconds * 1000).toISOString().slice(0, 10) === dateFilter
+        );
       }
-
       displayLogs(filtered);
     });
 
@@ -159,11 +217,8 @@
     });
 
     auth.onAuthStateChanged(user => {
-      if (user) {
-        loadLogs();
-      } else {
-        alert("ログインしていません");
-      }
+      if (user) loadLogs();
+      else alert("ログインしていません");
     });
   </script>
 </body>
