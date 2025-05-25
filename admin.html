@@ -57,6 +57,7 @@
     li button {
       margin-left: 10px;
       background-color: #e74c3c;
+      cursor: pointer;
     }
     li button:hover {
       background-color: #c0392b;
@@ -177,7 +178,9 @@
         const delBtn = document.createElement("button");
         delBtn.textContent = "削除";
         delBtn.addEventListener("click", () => {
-          removeDate(date);
+          if (confirm(`「${date}」の日程を本当に削除しますか？`)) {
+            removeDate(date);
+          }
         });
 
         li.appendChild(delBtn);
