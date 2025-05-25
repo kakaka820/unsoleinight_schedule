@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>管理者ログイン</title>
+  <style>
+    #adminContent { display: none; }
+  </style>
+</head>
+<body>
+
+  <div id="loginSection">
+    <h2>管理者ログイン</h2>
+    <input type="text" id="adminId" placeholder="管理者ID" /><br><br>
+    <input type="password" id="adminPassword" placeholder="パスワード" /><br><br>
+    <button id="loginBtn">ログイン</button>
+    <p id="loginError" style="color:red;"></p>
+  </div>
+
+  <div id="adminContent">
+    <h2>管理者画面</h2>
+    <!-- 管理者用の機能やUIをここに -->
+    <p>ここに管理者機能を実装します。</p>
+  </div>
+
+  <script>
+    const adminId = "admin";           // 管理者ID（ハードコード例）
+    const adminPassword = "admin123";  // 管理者パスワード（ハードコード例）
+
+    const loginSection = document.getElementById('loginSection');
+    const adminContent = document.getElementById('adminContent');
+    const loginError = document.getElementById('loginError');
+
+    document.getElementById('loginBtn').addEventListener('click', () => {
+      const inputId = document.getElementById('adminId').value;
+      const inputPw = document.getElementById('adminPassword').value;
+
+      if(inputId === adminId && inputPw === adminPassword){
+        // ログイン成功
+        loginSection.style.display = 'none';
+        adminContent.style.display = 'block';
+        loginError.textContent = "";
+      } else {
+        loginError.textContent = "IDまたはパスワードが間違っています。";
+      }
+    });
+  </script>
+
+</body>
+</html>
