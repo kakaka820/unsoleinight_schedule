@@ -1,6 +1,8 @@
 回答時のアンサーズを動的に修正、結果表示を動的に修正
 前回回答の読み込みは未修正
 
+チェックしてほしい：showAllResults() 関数全体を candidateDates に基づいた動的処理に書き直しがうまくできているかどうか
+
 
 
 // Firebase モジュールのインポート
@@ -124,40 +126,91 @@ async function showAllResults() {
     });
 
     window.users = {};
-    const maruUsers = { date1: [], date2: [], date3: [] };
+   const dates = await fetchCandidateDates();
+const maruUsers = {};
+dates.forEach(date => {
+  maruUsers[date] = [];
+});
 
-    docsArray.forEach(({ id, data }) => {
-      window.users[id] = data;
-      const a = data.answers || {};
-      if (a.date1 === "〇") maruUsers.date1.push(id);
-      if (a.date2 === "〇") maruUsers.date2.push(id);
-      if (a.date3 === "〇") maruUsers.date3.push(id);
-    });
 
-    const highlighted = {
-      date1: maruUsers.date1.length >= MAX ? maruUsers.date1.slice(0, MAX) : [],
-      date2: maruUsers.date2.length >= MAX ? maruUsers.date2.slice(0, MAX) : [],
-      date3: maruUsers.date3.length >= MAX ? maruUsers.date3.slice(0, MAX) : [],
-    };
+    const candidateDates = await fetchCandidateDates();
+const maruUsers = {};
+candidateDates.forEach(date => {
+  maruUsers[date] = [];
+});
+
+docsArray.forEach(({ id, data }) => {
+  window.users[id] = data;
+  const a = data.answers || {};
+  candidateDates.forEach(date => {
+    if (a[date] === "〇") {
+      maruUsers[date].push(id);
+    }
+  });
+});
+
+
+    const highlighted = {};
+dates.forEach(date => {
+  highlighted[date] = maruUsers[date].length >= MAX ? maruUsers[date].slice(0, MAX) : [];
+});
+
 
     if (Object.values(maruUsers).some(arr => arr.length >= MAX)) {
       if (status) status.textContent = "この会はすでに満席となりました。以降は観戦/リザーバー枠での参加を募集いたします。";
     }
 
-    docsArray.forEach(({ id, data }) => {
-      const a = data.answers || {};
-      const c = data.comment || "";
-      if (!a.date1 && !a.date2 && !a.date3 && !c) return;
+  const candidateDates = await fetchCandidateDates();
 
-      const row = `
-        <tr>
-          <td>${id}</td>
-          <td class="${highlighted.date1.includes(id) ? "highlight" : ""}">${a.date1 || ""}</td>
-          <td class="${highlighted.date2.includes(id) ? "highlight" : ""}">${a.date2 || ""}</td>
-          <td class="${highlighted.date3.includes(id) ? "highlight" : ""}">${a.date3 || ""}</td>
-          <td>${c}</td>
-        </tr>
-      `;
+docsArray.forEach(({ id, data }) => {
+  const a = data.answers || {};
+  const c = data.comment || "";
+
+  // すべての日付の回答が空 AND コメントも空ならスキップ
+  const hasAnyAnswer = candidateDates.some(date => a[date]);
+  if (!hasAnyAnswer && !c) return;
+
+  const row = document.createElement("tr");
+
+  // IDセル
+  const idCell = document.createElement("td");
+  idCell.textContent = id;
+  row.appendChild(idCell);
+
+  // 各候補日セル
+  candidateDates.forEach(date => {
+    const cell = document.createElement("td");
+    const answer = a[date] || "";
+    if (highlighted[date]?.includes(id)) {
+      cell.classList.add("highlight");
+    }
+    cell.textContent = answer;
+    row.appendChild(cell);
+  });
+
+  // コメントセル
+  const commentCell = document.createElement("td");
+  commentCell.textContent = c;
+  row.appendChild(commentCell);
+
+  tbody.appendChild(row);
+});
+
+
+    let cells = dates.map(date => {
+  const val = a[date] || "";
+  const isHighlight = highlighted[date]?.includes(id);
+  return `<td class="${isHighlight ? "highlight" : ""}">${val}</td>`;
+}).join("");
+
+const row = `
+  <tr>
+    <td>${id}</td>
+    ${cells}
+    <td>${c}</td>
+  </tr>
+`;
+
       tbody.innerHTML += row;
     });
 
@@ -282,22 +335,18 @@ const userRef = doc(db, "users", window.currentUser);
 const prevDoc = await getDoc(userRef);
 
 const dates = await fetchCandidateDates();
-  const logPromises = [];
+logPromises.push(
+  addDoc(collection(db, "logs"), {
+    uid: window.currentUser,
+    user: window.currentUser,
+    date,
+    from: oldVal,
+    to: newVal,
+    timestamp: new Date()
+  })
+);
 
-for (const date of dates) {
-  const oldVal = prevAnswers[date] || "";
-  const newVal = answers[date] || "";
-  if (oldVal !== newVal) {
-    await addDoc(collection(db, "logs"), {
-      uid: window.currentUser,
-      user: window.currentUser,
-      date,
-      from: oldVal,
-      to: newVal,
-      timestamp: new Date()
-    });
-  }
-}
+
   // 🔄 タイムスタンプ更新
   if (JSON.stringify(answers) !== JSON.stringify(prevAnswers)) {
     updateData.updatedAt = serverTimestamp();
