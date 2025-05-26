@@ -1,3 +1,8 @@
+回答時のアンサーズを動的に修正、結果表示を動的に修正
+前回回答の読み込みは未修正
+
+
+
 // Firebase モジュールのインポート
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
@@ -272,25 +277,27 @@ answerInputs.forEach(input => {
   };
 
   // 🔴 ログ記録処理（変更があった場合のみ）
-  const logPromises = [];
 
-  ["date1", "date2", "date3"].forEach(date => {
-    const oldVal = prevAnswers[date] || "";
-    const newVal = answers[date] || "";
+const userRef = doc(db, "users", window.currentUser);
+const prevDoc = await getDoc(userRef);
+const prevAnswers = prevDoc.exists() ? prevDoc.data().answers || {} : {};
 
-    if (oldVal !== newVal) {
-      logPromises.push(
-        addDoc(collection(db, "logs"), {
-          user: window.currentUser,
-          field: date,
-          from: oldVal,
-          to: newVal,
-          timestamp: serverTimestamp()
-        })
-      );
-    }
-  });
+const dates = await fetchCandidateDates();
 
+for (const date of dates) {
+  const oldVal = prevAnswers[date] || "";
+  const newVal = answers[date] || "";
+  if (oldVal !== newVal) {
+    await addDoc(collection(db, "logs"), {
+      uid: user.uid,
+      user: name,
+      date,
+      from: oldVal,
+      to: newVal,
+      timestamp: new Date()
+    });
+  }
+}
   // 🔄 タイムスタンプ更新
   if (JSON.stringify(answers) !== JSON.stringify(prevAnswers)) {
     updateData.updatedAt = serverTimestamp();
