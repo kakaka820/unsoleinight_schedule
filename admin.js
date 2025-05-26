@@ -362,7 +362,7 @@ if (log.timestamp) {
   timeTd.textContent = "-";
 }
 tr.appendChild(timeTd);
-
+});
 // --- ログイン処理 ---
 
 function showLoginMessage(msg, isError = false) {
