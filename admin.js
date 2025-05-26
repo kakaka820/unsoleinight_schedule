@@ -90,14 +90,23 @@ async function getEventDates() {
 async function displayEventDates() {
   const dates = await getEventDates();
   const ul = document.getElementById("datesList");
-  ul.innerHTML = "";
+ ul.innerHTML = "";
   dates.forEach((date, index) => {
     const li = document.createElement("li");
-    li.textContent = date;
+    li.textContent = date + " ";
+
+    // 編集ボタン
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "編集";
+    editBtn.addEventListener("click", () => startEditDate(index, date));
+    li.appendChild(editBtn);
+
+    // 削除ボタン
     const delBtn = document.createElement("button");
     delBtn.textContent = "削除";
     delBtn.addEventListener("click", () => removeDate(index));
     li.appendChild(delBtn);
+
     ul.appendChild(li);
   });
 }
