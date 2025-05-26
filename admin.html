@@ -374,7 +374,7 @@ const editBtn = document.createElement("button");
       const msg = document.getElementById("datesMessage");
       msg.textContent = "";
 
-      if (!confirm(`日程「${dateStr}」を削除しますか？`)) return;
+      if (!confirm(`今削除しようとしている日程は「${dateStr}」です。本当に削除しますか？`)) return;
 
       try {
         await db.collection("settings").doc("eventDates").update({
