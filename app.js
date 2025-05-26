@@ -65,6 +65,7 @@ async function renderForm() {
 renderForm();
 
 async function loadPreviousAnswers() {
+  const dates = await fetchCandidateDates();
   const userData = window.users[window.currentUser] || {};
   const answers = userData.answers || {};
   const comment = userData.comment || "";
