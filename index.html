@@ -49,17 +49,26 @@
   <p id="maruStatusResult" class="fullMsg"></p>
 
   <form id="scheduleForm">
-    <table id="resultTable">
-      <thead>
-        <tr><th>日付</th><th>〇</th><th>△</th><th>✕</th></tr>
-      </thead>
-  <thead>
-    <tr id="resultHeaderRow"></tr>
+  <!-- フォーム用テーブル -->
+<table id="scheduleFormTable">
+  <thead id="formHeader">
+    <!-- フォームのヘッダーはJSで生成 -->
   </thead>
   <tbody id="form-body">
-    <!-- JavaScriptで日付ごとに行が追加される -->
+    <!-- フォームの行はJSで生成 -->
   </tbody>
 </table>
+
+<!-- 結果表示テーブル -->
+<table id="resultTable">
+  <thead>
+    <tr id="resultHeaderRow"></tr> <!-- ✅ ここに移す -->
+  </thead>
+  <tbody>
+    <!-- JSで結果を表示 -->
+  </tbody>
+</table>
+
     </table>
 
     <br>
