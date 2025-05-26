@@ -11,8 +11,8 @@
     <input id="userId" placeholder="ユーザーID"><br>
     <input id="password" type="password" placeholder="パスワード"><br>
     <button onclick="login()">ログイン</button>
-    <p id="loginError"></p>
     <button onclick="showRegister()">新規登録</button>
+    <p id="loginError"></p>
   </div>
 
   <div class="container hidden" id="registerSection">
@@ -20,8 +20,8 @@
     <input id="newUserId" placeholder="ユーザーID"><br>
     <input id="newPassword" type="password" placeholder="パスワード"><br>
     <button onclick="register()">登録</button>
-    <p id="registerMessage"></p>
     <button onclick="backToLogin()">戻る</button>
+    <p id="registerMessage"></p>
   </div>
 
   <div class="container hidden"id="formSection">
@@ -39,7 +39,8 @@
         </thead>
         <tbody id="form-body"></tbody>
       </table>
-      <textarea id="comment" placeholder="コメント"></textarea><br>
+      <textarea id="comment" placeholder="コメントの追記のみでは列の変更は起きません。
+        赤枠で強調表示されるのは開催される村のうち、参加エントリーが早かった方のみです。"></textarea><br>
       <button type="submit">送信</button>
     </form>
     <p id="submitMessage"></p>
