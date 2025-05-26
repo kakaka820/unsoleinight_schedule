@@ -1,4 +1,4 @@
-a
+これは
 
 <!DOCTYPE html>
 <html lang="ja">
@@ -160,18 +160,8 @@ a
 </head>
 <body>
 
-  
-
    <!-- ログインセクション -->
   <div id="loginSection">
-
-
-
-
-
-
-
-
 
 <h1>管理者ログイン</h1>
     <label for="adminId">管理者ID:</label>
@@ -181,13 +171,6 @@ a
     <button id="loginBtn">ログイン</button>
     <p id="loginMessage"></p>
   </div>
-
-
-
-
-
-
-
 
 
   <div class="container hidden" id="adminSection">
@@ -201,16 +184,14 @@ a
 
     <hr style="margin: 40px 0;" />
 
+
     <h2>イベント日程の管理</h2>
     <input type="text" id="newDateInput" placeholder="例：2025-06-01 19:00〜" />
     <button id="addDateBtn">追加</button>
     <ul id="datesList"></ul>
     <p id="datesMessage"></p>
-  </div>
-
 
     <hr style="margin: 40px 0;" />
-  <div class="container hidden" id="adminSection">
 
     <h2>変更ログ</h2>
 
@@ -228,6 +209,7 @@ a
         <button id="clearFilterBtn">クリア</button>
       </div>
     </div>
+
     <table id="logTable">
       <thead>
         <tr>
@@ -243,8 +225,7 @@ a
     </table>
 
   </div>
-</div>
-
+ </div>
   <!-- Firebase SDK (v9 compat版) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
