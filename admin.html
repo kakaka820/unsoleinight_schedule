@@ -1,3 +1,9 @@
+管理画面　定員変更と日付の追加と削除まで対応（未連携）
+ログ実装はまだ。ログ実装（絞り込み機能含む、最新100件の保存）実装済、ただし表示されるのがIDと
+日付の追加を削除の同期を行う予定  
+ユーザー管理はUID、元の状態と更新後表記まで対応。
+
+
 
 <!DOCTYPE html>
 <html lang="ja">
@@ -181,15 +187,15 @@ let currentUid = "";
       }
     }
 
-   async function addDate(dateStr, user, uid) {
+    async function addDate(dateStr) {
   try {
     await db.collection("dates").add({
       date: dateStr,
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
     });
     await addLog({ 
-      user: user,
-      uid: uid,
+      user: currentUserId,
+      uid: currentUid,
       from: "-",
       to: `日程追加: ${dateStr}`
     });
@@ -202,7 +208,6 @@ let currentUid = "";
     document.getElementById("datesMessage").style.color = "red";
   }
 }
-
 
 
     async function removeDate(id) {
@@ -368,6 +373,8 @@ return logDate === dateFilterVal;
 
     // --- イベント登録 ---
 
+    document.getElementById("loginBtn").addEventListener("click", login);
+
     document.getElementById("updateCapacityBtn").addEventListener("click", updateMaxCapacity);
 
     document.getElementById("addDateBtn").addEventListener("click", () => {
@@ -377,7 +384,7 @@ return logDate === dateFilterVal;
         document.getElementById("datesMessage").style.color = "red";
         return;
       }
-     addDate(dateStr, currentUserId, currentUid);
+      addDate(dateStr, ADMIN_ID);
       document.getElementById("newDateInput").value = "";
     });
 
