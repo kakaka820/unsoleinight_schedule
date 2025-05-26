@@ -11,7 +11,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>管理者画面 - 定員設定＆日程管理</title>
- <link rel="stylesheet" href="/admin.css" />
+ <link rel="stylesheet" href="admin.css" />
 </head>
 <body>
 
@@ -187,15 +187,15 @@ let currentUid = "";
       }
     }
 
-    async function addDate(dateStr) {
+   async function addDate(dateStr, user, uid) {
   try {
     await db.collection("dates").add({
       date: dateStr,
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
     });
     await addLog({ 
-      user: currentUserId,
-      uid: currentUid,
+      user: user,
+      uid: uid,
       from: "-",
       to: `日程追加: ${dateStr}`
     });
@@ -208,6 +208,7 @@ let currentUid = "";
     document.getElementById("datesMessage").style.color = "red";
   }
 }
+
 
 
     async function removeDate(id) {
@@ -373,8 +374,6 @@ return logDate === dateFilterVal;
 
     // --- イベント登録 ---
 
-    document.getElementById("loginBtn").addEventListener("click", login);
-
     document.getElementById("updateCapacityBtn").addEventListener("click", updateMaxCapacity);
 
     document.getElementById("addDateBtn").addEventListener("click", () => {
@@ -384,7 +383,7 @@ return logDate === dateFilterVal;
         document.getElementById("datesMessage").style.color = "red";
         return;
       }
-      addDate(dateStr, ADMIN_ID);
+     addDate(dateStr, currentUserId, currentUid);
       document.getElementById("newDateInput").value = "";
     });
 
