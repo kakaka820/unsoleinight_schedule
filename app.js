@@ -23,7 +23,7 @@ window.currentUser = "";
 
 
 async function fetchCandidateDates() {
-  const docRef = doc(db, "settings", "settings");  // ← ここを変更！
+  const docRef = doc(db, "settings", "eventDates");  // ← ここを変更！
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
     return docSnap.data().list || []; // ← フィールド名に合わせて変更！
