@@ -33,13 +33,37 @@ async function fetchCandidateDates() {
 
 async function renderForm() {
   const dates = await fetchCandidateDates();
+
+  // ヘッダー生成
+  const thead = document.getElementById("formHeader");
+  thead.innerHTML = ""; // クリア
+  const headerRow = document.createElement("tr");
+
+  const thUser = document.createElement("th");
+  thUser.textContent = "ユーザーID";
+  headerRow.appendChild(thUser);
+
+  dates.forEach((date, index) => {
+    const th = document.createElement("th");
+    th.textContent = date;
+    headerRow.appendChild(th);
+  });
+
+  const thComment = document.createElement("th");
+  thComment.textContent = "コメント";
+  headerRow.appendChild(thComment);
+
+  thead.appendChild(headerRow);
+
+  // フォーム本体（tbody）生成
   const tbody = document.getElementById("form-body");
+  tbody.innerHTML = ""; // 念のためクリア
 
   dates.forEach((date) => {
     const row = document.createElement("tr");
 
     const dateCell = document.createElement("td");
-    dateCell.textContent = date;
+     th.textContent = `日付${index + 1} (${date})`; // またはただの date にすることも可能
     row.appendChild(dateCell);
 
     ["〇", "△", "×"].forEach((choice) => {
