@@ -23,10 +23,10 @@ window.currentUser = "";
 
 
 async function fetchCandidateDates() {
-  const docRef = doc(db, "candidates", "list");
+  const docRef = doc(db, "settings", "settings");  // ← ここを変更！
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    return docSnap.data().dates; // 配列 ["2025-06-01", "2025-06-02"]
+    return docSnap.data().list || []; // ← フィールド名に合わせて変更！
   } else {
     console.log("No such document!");
     return [];
