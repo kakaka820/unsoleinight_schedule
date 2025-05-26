@@ -255,25 +255,28 @@ async function displayLogs(filterUser = "", filterDate = "") {
     toTd.textContent = JSON.stringify(log.to);
     tr.appendChild(toTd);
 
-    // 日付（YYYY/MM/DD）
-    const dateTd = document.createElement("td");
-    if (log.timestamp) {
-      const dt = log.timestamp;
-      dateTd.textContent = dt.getFullYear() + "/" + String(dt.getMonth() + 1).padStart(2, "0") + "/" + String(dt.getDate()).padStart(2, "0");
-    } else {
-      dateTd.textContent = "-";
-    }
-    tr.appendChild(dateTd);
+    // 日付（dateフィールドを優先）
+const dateTd = document.createElement("td");
+if (log.date) {
+  // すでに文字列で保存されている想定
+  dateTd.textContent = log.date;
+} else if (log.timestamp) {
+  const dt = log.timestamp;
+  dateTd.textContent = dt.getFullYear() + "/" + String(dt.getMonth() + 1).padStart(2, "0") + "/" + String(dt.getDate()).padStart(2, "0");
+} else {
+  dateTd.textContent = "-";
+}
+tr.appendChild(dateTd);
 
-    // 時刻（HH:MM:SS）
-    const timeTd = document.createElement("td");
-    if (log.timestamp) {
-      const dt = log.timestamp;
-      timeTd.textContent = String(dt.getHours()).padStart(2, "0") + ":" + String(dt.getMinutes()).padStart(2, "0") + ":" + String(dt.getSeconds()).padStart(2, "0");
-    } else {
-      timeTd.textContent = "-";
-    }
-    tr.appendChild(timeTd);
+// 時刻（timestampの時間部分）
+const timeTd = document.createElement("td");
+if (log.timestamp) {
+  const dt = log.timestamp;
+  timeTd.textContent = String(dt.getHours()).padStart(2, "0") + ":" + String(dt.getMinutes()).padStart(2, "0") + ":" + String(dt.getSeconds()).padStart(2, "0");
+} else {
+  timeTd.textContent = "-";
+}
+tr.appendChild(timeTd);
 
     tbody.appendChild(tr);
   });
