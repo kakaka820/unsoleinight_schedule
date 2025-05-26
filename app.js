@@ -197,29 +197,94 @@ docsArray.forEach(({ id, data }) => {
 });
 
 
-    let cells = dates.map(date => {
-  const val = a[date] || "";
-  const isHighlight = highlighted[date]?.includes(id);
-  return `<td class="${isHighlight ? "highlight" : ""}">${val}</td>`;
-}).join("");
-
-const row = `
-  <tr>
-    <td>${id}</td>
-    ${cells}
-    <td>${c}</td>
-  </tr>
-`;
-
-      tbody.innerHTML += row;
-    });
 
   } catch (err) {
     console.error("データ取得エラー:", err);
   }
 }
 
-// 以下、login/registerなどは元のまま省略（必要なら展開します）
+// ログイン機能
+window.login = async function () {
+  const id = document.getElementById("userId").value.trim();
+  const pass = document.getElementById("password").value;
+
+  if (!id || !pass) {
+    document.getElementById("loginError").textContent = "IDとパスワードを入力してください。";
+    return;
+  }
+
+  try {
+    const docSnap = await getDoc(doc(db, "users", id));
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      const hashedInput = sha256(pass);
+
+      if (data.password === hashedInput) {
+        window.currentUser = id;
+        window.users[id] = data;
+
+        document.getElementById("loginSection").classList.add("hidden");
+        document.getElementById("formSection").classList.remove("hidden");
+        document.getElementById("resultSection").classList.remove("hidden");
+        document.getElementById("welcomeMsg").textContent = `${id} さんとしてログイン中`;
+
+        loadPreviousAnswers();
+        await showAllResults();
+
+        document.getElementById("loginError").textContent = "";
+        document.getElementById("submitMessage").textContent = "";
+      } else {
+        document.getElementById("loginError").textContent = "パスワードが違います。";
+      }
+    } else {
+      document.getElementById("loginError").textContent = "IDが存在しません。";
+    }
+  } catch (err) {
+    console.error(err);
+    document.getElementById("loginError").textContent = "ログイン中にエラーが発生しました。";
+  }
+};
+
+// 登録機能
+window.register = async function () {
+  const id = document.getElementById("newUserId").value.trim();
+  const pass = document.getElementById("newPassword").value;
+
+  if (!id || !pass) {
+    document.getElementById("registerMessage").textContent = "IDとパスワードを入力してください。";
+    return;
+  }
+
+  if (/[<>]/.test(id)) {
+    document.getElementById("registerMessage").textContent = "IDに < や > を含めないでください。";
+    return;
+  }
+
+  const docSnap = await getDoc(doc(db, "users", id));
+  if (docSnap.exists()) {
+    document.getElementById("registerMessage").textContent = "このIDはすでに使われています。";
+  } else {
+    const hashedPass = sha256(pass);
+    await setDoc(doc(db, "users", id), {
+      password: hashedPass,
+      answers: {},
+      comment: ""
+    });
+    document.getElementById("registerMessage").style.color = "green";
+    document.getElementById("registerMessage").textContent = "登録成功！ログイン画面に戻ってください。";
+  }
+};
+
+// 表示切り替え
+window.showRegister = () => {
+  document.getElementById("loginSection").classList.add("hidden");
+  document.getElementById("registerSection").classList.remove("hidden");
+};
+
+window.backToLogin = () => {
+  document.getElementById("registerSection").classList.add("hidden");
+  document.getElementById("loginSection").classList.remove("hidden");
+};
 
 
 // ログイン機能
