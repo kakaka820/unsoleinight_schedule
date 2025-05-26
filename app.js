@@ -160,9 +160,7 @@ async function showAllResults() {
       const c = data.comment || "";
       const hasAnyAnswer = dates.some(date => a[date]);
       if (!hasAnyAnswer && !c) return;
-
       const row = document.createElement("tr");
-
       const idCell = document.createElement("td");
       idCell.textContent = id;
       row.appendChild(idCell);
