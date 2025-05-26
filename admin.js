@@ -1,3 +1,4 @@
+
 // Firebase初期化
 const firebaseConfig = {
   apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
@@ -90,103 +91,17 @@ async function getEventDates() {
 async function displayEventDates() {
   const dates = await getEventDates();
   const ul = document.getElementById("datesList");
- ul.innerHTML = "";
+  ul.innerHTML = "";
   dates.forEach((date, index) => {
     const li = document.createElement("li");
-    li.textContent = date + " ";
-
-    // 編集ボタン
-    const editBtn = document.createElement("button");
-    editBtn.textContent = "編集";
-    editBtn.addEventListener("click", () => startEditDate(index, date));
-    li.appendChild(editBtn);
-
-    // 削除ボタン
+    li.textContent = date;
     const delBtn = document.createElement("button");
     delBtn.textContent = "削除";
     delBtn.addEventListener("click", () => removeDate(index));
     li.appendChild(delBtn);
-
     ul.appendChild(li);
   });
 }
-
-// 編集モードの開始
-function startEditDate(index, oldDate) {
-  const ul = document.getElementById("datesList");
-  ul.innerHTML = ""; // 一旦クリア
-
-  getEventDates().then(dates => {
-    dates.forEach((date, i) => {
-      const li = document.createElement("li");
-      if (i === index) {
-        // 編集中の項目だけ入力フォームと保存・キャンセルボタンを表示
-        const input = document.createElement("input");
-        input.type = "text";
-        input.value = oldDate;
-        li.appendChild(input);
-
-        const saveBtn = document.createElement("button");
-        saveBtn.textContent = "保存";
-        saveBtn.addEventListener("click", async () => {
-          const newDate = input.value.trim();
-          if (!newDate) {
-            alert("日程を入力してください。");
-            return;
-          }
-          // 重複チェック
-          if (dates.some((d, idx) => d === newDate && idx !== index)) {
-            alert("同じ日程が既にあります。");
-            return;
-          }
-          dates[index] = newDate;
-          const ref = db.collection("settings").doc("eventDates");
-
-          // 保存前の状態
-          const beforeDates = [...dates];
-          beforeDates[index] = oldDate; // 元の状態をセット
-
-          try {
-            await ref.set({ list: dates });
-
-            // ログ保存
-            await saveLog({
-              user: currentUserId,
-              uid: currentUid,
-              from: { list: beforeDates },
-              to: { list: dates },
-              timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            await displayEventDates();
-          } catch (e) {
-            alert("更新に失敗しました。");
-            console.error(e);
-          }
-        });
-        li.appendChild(saveBtn);
-
-        const cancelBtn = document.createElement("button");
-        cancelBtn.textContent = "キャンセル";
-        cancelBtn.addEventListener("click", () => displayEventDates());
-        li.appendChild(cancelBtn);
-      } else {
-        li.textContent = date + " ";
-        const editBtn = document.createElement("button");
-        editBtn.textContent = "編集";
-        editBtn.addEventListener("click", () => startEditDate(i, date));
-        li.appendChild(editBtn);
-
-        const delBtn = document.createElement("button");
-        delBtn.textContent = "削除";
-        delBtn.addEventListener("click", () => removeDate(i));
-        li.appendChild(delBtn);
-      }
-      ul.appendChild(li);
-    });
-  });
-}
-
 
 async function addDate() {
   const input = document.getElementById("newDateInput");
@@ -362,8 +277,7 @@ if (log.timestamp) {
   timeTd.textContent = "-";
 }
 tr.appendChild(timeTd);
-    tbody.appendChild(tr); 
-});
+
 // --- ログイン処理 ---
 
 function showLoginMessage(msg, isError = false) {
