@@ -14,74 +14,73 @@
 </head>
 <body>
 
-<!-- 🔒 ログインセクション -->
-<div class="container" id="loginSection">
-  <h2>ログイン</h2>
-  <label for="userId">ユーザーID:</label><br>
-  <input type="text" id="userId" name="userId" placeholder="ID" /><br><br>
+  <!-- 🔒 ログインセクション -->
+  <div class="container" id="loginSection">
+    <h2>ログイン</h2>
+    <label for="userId">ユーザーID:</label><br>
+    <input type="text" id="userId" name="userId" placeholder="ID" /><br><br>
 
-  <label for="password">パスワード:</label><br>
-  <input type="password" id="password" name="password" placeholder="パスワード" /><br><br>
+    <label for="password">パスワード:</label><br>
+    <input type="password" id="password" name="password" placeholder="パスワード" /><br><br>
 
-  <button onclick="login()">ログイン</button>
-  <button onclick="showRegister()">新規登録</button>
-  <p id="loginError"></p>
-</div>
+    <button onclick="login()">ログイン</button>
+    <button onclick="showRegister()">新規登録</button>
+    <p id="loginError"></p>
+  </div>
 
-<!-- 📝 新規登録セクション -->
-<div class="container hidden" id="registerSection">
-  <h2>新規アカウント登録</h2>
-  <label for="newUserId">新しいID:</label><br>
-  <input type="text" id="newUserId" name="newUserId" placeholder="新しいID" /><br><br>
+  <!-- 📝 新規登録セクション -->
+  <div class="container hidden" id="registerSection">
+    <h2>新規アカウント登録</h2>
+    <label for="newUserId">新しいID:</label><br>
+    <input type="text" id="newUserId" name="newUserId" placeholder="新しいID" /><br><br>
 
-  <label for="newPassword">新しいパスワード:</label><br>
-  <input type="password" id="newPassword" name="newPassword" placeholder="新しいパスワード" /><br><br>
+    <label for="newPassword">新しいパスワード:</label><br>
+    <input type="password" id="newPassword" name="newPassword" placeholder="新しいパスワード" /><br><br>
 
-  <button onclick="register()">登録</button>
-  <button onclick="backToLogin()">戻る</button>
-  <p id="registerMessage"></p>
-</div>
+    <button onclick="register()">登録</button>
+    <button onclick="backToLogin()">戻る</button>
+    <p id="registerMessage"></p>
+  </div>
 
-<!-- 📅 日程調整フォームセクション -->
-<div class="container hidden" id="formSection">
-  <h2>日程調整アンケート</h2>
-  <p id="welcomeMsg"></p>
-  <p id="maruStatusResult" class="fullMsg"></p>
+  <!-- 📅 日程調整フォームセクション -->
+  <div class="container hidden" id="formSection">
+    <h2>日程調整アンケート</h2>
+    <p id="welcomeMsg"></p>
+    <p id="maruStatusResult" class="fullMsg"></p>
 
-  <form id="scheduleForm">
-  <!-- フォーム用テーブル -->
-<table id="scheduleFormTable">
-  <thead id="formHeader">
-    <!-- フォームのヘッダーはJSで生成 -->
-  </thead>
-  <tbody id="form-body">
-    <!-- フォームの行はJSで生成 -->
-  </tbody>
-</table>
+    <form id="scheduleForm">
+      <!-- フォーム用テーブル -->
+      <table id="scheduleFormTable">
+        <thead id="formHeaderForm">
+          <!-- フォームのヘッダーはJSで生成 -->
+        </thead>
+        <tbody id="formBodyForm">
+          <!-- フォームの行はJSで生成 -->
+        </tbody>
+      </table>
 
+      <br>
+      <label for="comment">コメント（任意）:</label><br>
+      <textarea id="comment" name="comment" placeholder="コメントの追記のみでは列の変更は起きません。赤枠で強調表示されるのは開催される村のうち、参加エントリーが早かった方のみです。"></textarea><br><br>
+
+      <button type="submit">送信・更新</button>
+      <p id="submitMessage"></p>
+    </form>
+  </div>
+
+  <!-- 📊 結果セクション -->
+  <div class="container hidden" id="resultSection">
+    <h2>全回答一覧</h2>
+    <p id="maruStatusResult"></p>
+    <table id="resultTable">
+      <thead id="formHeaderResult">
+        <!-- 結果のヘッダーはJSで生成 -->
+      </thead>
+      <tbody id="formBodyResult">
+        <!-- 結果の行はJSで生成 -->
+      </tbody>
     </table>
-
-    <br>
-    <label for="comment">コメント（任意）:</label><br>
-    <textarea id="comment" name="comment" placeholder="コメントの追記のみでは列の変更は起きません。赤枠で強調表示されるのは開催される村のうち、参加エントリーが早かった方のみです。"></textarea><br><br>
-
-    <button type="submit">送信・更新</button>
-    <p id="submitMessage"></p>
-  </form>
-</div>
-
-<!-- 📊 結果セクション -->
-<div class="container hidden" id="resultSection">
-  <h2>全回答一覧</h2>
-  <p id="maruStatusResult"></p>
- <table id="formTable">
-  <thead id="formHeader"></thead>
-  <tbody id="form-body"></tbody>
-</table>
-</div>
-
-<!-- ✅ 注意：app.js は1回だけ読み込む！ -->
-<!-- ❌ 削除済み：<script src="app.js"></script> -->
+  </div>
 
 </body>
 </html>
