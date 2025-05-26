@@ -23,7 +23,6 @@ window.currentUser = "";
 
 
 //firebaseから日付を読み取る
-import { getDoc, doc } from "firebase/firestore";
 import { db } from "./firebase"; // ← あなたのfirebase設定に応じて
 
 async function fetchCandidateDates() {
