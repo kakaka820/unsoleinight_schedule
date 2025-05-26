@@ -282,14 +282,15 @@ const userRef = doc(db, "users", window.currentUser);
 const prevDoc = await getDoc(userRef);
 
 const dates = await fetchCandidateDates();
+  const logPromises = [];
 
 for (const date of dates) {
   const oldVal = prevAnswers[date] || "";
   const newVal = answers[date] || "";
   if (oldVal !== newVal) {
     await addDoc(collection(db, "logs"), {
-      uid: user.uid,
-      user: name,
+      uid: window.currentUser,
+      user: window.currentUser,
       date,
       from: oldVal,
       to: newVal,
