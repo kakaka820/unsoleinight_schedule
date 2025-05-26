@@ -80,7 +80,7 @@ async function loadPreviousAnswers() {
   document.getElementById("comment").value = comment;
 }
 
-async function showAllResults() {
+
 async function showAllResults() {
   const dates = await fetchCandidateDates(); // ✅ 先に定義
   // ヘッダー生成
