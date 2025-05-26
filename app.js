@@ -1,13 +1,11 @@
-// Firebase モジュールのインポート
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
-// Firebase 設定と初期化
 const firebaseConfig = {
   apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
   authDomain: "unsoleinight-schedule.firebaseapp.com",
   projectId: "unsoleinight-schedule",
-  storageBucket: "unsoleinight-schedule.firebasestorage.app",
+  storageBucket: "unsoleinight-schedule.appspot.com",
   messagingSenderId: "1040333692698",
   appId: "1:1040333692698:web:fb0e4f481dff8167f756a3"
 };
@@ -15,40 +13,35 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// グローバル変数
 window.users = {};
 window.currentUser = "";
-const maruUsers = {}; // ✅ 宣言を1回だけに統一
+const maruUsers = {};
+
+function sha256(str) {
+  const buffer = new TextEncoder().encode(str);
+  return crypto.subtle.digest("SHA-256", buffer).then(buf =>
+    Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("")
+  );
+}
 
 async function fetchCandidateDates() {
   const docRef = doc(db, "settings", "eventDates");
   const docSnap = await getDoc(docRef);
-  if (docSnap.exists()) {
-    return docSnap.data().list || [];
-  } else {
-    console.log("No such document!");
-    return [];
-  }
+  return docSnap.exists() ? docSnap.data().list || [] : [];
 }
 
 async function renderForm() {
   const dates = await fetchCandidateDates();
-
-
-
-
-  // フォーム本体（tbody）生成
   const tbody = document.getElementById("form-body");
-  tbody.innerHTML = ""; // 念のためクリア
+  tbody.innerHTML = "";
 
-  dates.forEach((date) => {
+  dates.forEach(date => {
     const row = document.createElement("tr");
-
     const dateCell = document.createElement("td");
-   dateCell.textContent = `日付 (${date})`;  // またはただの date にすることも可能
+    dateCell.textContent = `日付 (${date})`;
     row.appendChild(dateCell);
 
-    ["〇", "△", "×"].forEach((choice) => {
+    ["〇", "△", "×"].forEach(choice => {
       const td = document.createElement("td");
       const input = document.createElement("input");
       input.type = "radio";
@@ -62,13 +55,12 @@ async function renderForm() {
   });
 }
 
-renderForm();
-
 async function loadPreviousAnswers() {
   const dates = await fetchCandidateDates();
   const userData = window.users[window.currentUser] || {};
   const answers = userData.answers || {};
   const comment = userData.comment || "";
+
   dates.forEach(date => {
     const selected = answers[date];
     if (selected) {
@@ -76,23 +68,19 @@ async function loadPreviousAnswers() {
       if (el) el.checked = true;
     }
   });
-
   document.getElementById("comment").value = comment;
 }
 
-
 async function showAllResults() {
-  const dates = await fetchCandidateDates(); // ✅ 先に定義
-  // ヘッダー生成
-  const thead = document.getElementById("formHeader");
-  thead.innerHTML = ""; // クリア
-  const headerRow = document.createElement("tr");
+  const dates = await fetchCandidateDates();
+  const headerRow = document.getElementById("resultHeaderRow");
+  headerRow.innerHTML = "";
 
   const thUser = document.createElement("th");
   thUser.textContent = "ユーザーID";
   headerRow.appendChild(thUser);
 
-  dates.forEach((date, index) => {
+  dates.forEach(date => {
     const th = document.createElement("th");
     th.textContent = date;
     headerRow.appendChild(th);
@@ -102,153 +90,111 @@ async function showAllResults() {
   thComment.textContent = "コメント";
   headerRow.appendChild(thComment);
 
-  thead.appendChild(headerRow);
-
-
   const tbody = document.getElementById("resultTable").querySelector("tbody");
   const status = document.getElementById("maruStatusResult");
   tbody.innerHTML = "";
   if (status) status.textContent = "";
 
-  try {
-    const configSnap = await getDoc(doc(db, "settings", "capacity"));
-    let MAX = 3;
-    if (configSnap.exists()) {
-      MAX = configSnap.data().maxCapacity;
-    }
+  const configSnap = await getDoc(doc(db, "settings", "capacity"));
+  let MAX = configSnap.exists() ? configSnap.data().maxCapacity : 3;
 
-    const docsArray = [];
-    const snapshot = await getDocs(collection(db, "users"));
-    snapshot.forEach(docSnap => {
-      docsArray.push({ id: docSnap.id, data: docSnap.data() });
-    });
+  const snapshot = await getDocs(collection(db, "users"));
+  const docsArray = snapshot.docs.map(d => ({ id: d.id, data: d.data() }));
 
-    docsArray.sort((a, b) => {
-      const t1 = a.data.updatedAt?.toMillis() || 0;
-      const t2 = b.data.updatedAt?.toMillis() || 0;
-      return t1 - t2;
-    });
+  docsArray.sort((a, b) => (a.data.updatedAt?.toMillis() || 0) - (b.data.updatedAt?.toMillis() || 0));
+  window.users = {};
+  dates.forEach(date => { maruUsers[date] = []; });
 
-    window.users = {};
-    const dates = await fetchCandidateDates();
-
+  docsArray.forEach(({ id, data }) => {
+    window.users[id] = data;
+    const a = data.answers || {};
     dates.forEach(date => {
-      maruUsers[date] = [];
+      if (a[date] === "〇") maruUsers[date].push(id);
     });
+  });
 
-    docsArray.forEach(({ id, data }) => {
-      window.users[id] = data;
-      const a = data.answers || {};
-      dates.forEach(date => {
-        if (a[date] === "〇") {
-          maruUsers[date].push(id);
-        }
-      });
-    });
+  const highlighted = {};
+  dates.forEach(date => {
+    highlighted[date] = maruUsers[date].length >= MAX ? maruUsers[date].slice(0, MAX) : [];
+  });
 
-    const highlighted = {};
-    dates.forEach(date => {
-      highlighted[date] = maruUsers[date].length >= MAX ? maruUsers[date].slice(0, MAX) : [];
-    });
-
-    if (Object.values(maruUsers).some(arr => arr.length >= MAX)) {
-      if (status) status.textContent = "この会はすでに満席となりました。以降は観戦/リザーバー枠での参加を募集いたします。";
-    }
-
-    docsArray.forEach(({ id, data }) => {
-      const a = data.answers || {};
-      const c = data.comment || "";
-      const hasAnyAnswer = dates.some(date => a[date]);
-      if (!hasAnyAnswer && !c) return;
-      const row = document.createElement("tr");
-      const idCell = document.createElement("td");
-      idCell.textContent = id;
-      row.appendChild(idCell);
-
-      dates.forEach(date => {
-        const cell = document.createElement("td");
-        const answer = a[date] || "";
-        if (highlighted[date]?.includes(id)) {
-          cell.classList.add("highlight");
-        }
-        cell.textContent = answer;
-        row.appendChild(cell);
-      });
-
-      const commentCell = document.createElement("td");
-      commentCell.textContent = c;
-      row.appendChild(commentCell);
-
-      tbody.appendChild(row);
-    });
-
-  } catch (err) {
-    console.error("データ取得エラー:", err);
+  if (Object.values(maruUsers).some(arr => arr.length >= MAX)) {
+    if (status) status.textContent = "この会はすでに満席となりました。以降は観戦/リザーバー枠での参加を募集いたします。";
   }
+
+  docsArray.forEach(({ id, data }) => {
+    const a = data.answers || {};
+    const c = data.comment || "";
+    if (!Object.keys(a).length && !c) return;
+
+    const row = document.createElement("tr");
+    const idCell = document.createElement("td");
+    idCell.textContent = id;
+    row.appendChild(idCell);
+
+    dates.forEach(date => {
+      const cell = document.createElement("td");
+      const answer = a[date] || "";
+      if (highlighted[date]?.includes(id)) cell.classList.add("highlight");
+      cell.textContent = answer;
+      row.appendChild(cell);
+    });
+
+    const commentCell = document.createElement("td");
+    commentCell.textContent = c;
+    row.appendChild(commentCell);
+    tbody.appendChild(row);
+  });
 }
 
-// ログイン機能
 window.login = async function () {
   const id = document.getElementById("userId").value.trim();
   const pass = document.getElementById("password").value;
-
   if (!id || !pass) {
     document.getElementById("loginError").textContent = "IDとパスワードを入力してください。";
     return;
   }
 
-  try {
-    const docSnap = await getDoc(doc(db, "users", id));
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      const hashedInput = sha256(pass);
-
-      if (data.password === hashedInput) {
-        window.currentUser = id;
-        window.users[id] = data;
-
-        document.getElementById("loginSection").classList.add("hidden");
-        document.getElementById("formSection").classList.remove("hidden");
-        document.getElementById("resultSection").classList.remove("hidden");
-        document.getElementById("welcomeMsg").textContent = `${id} さんとしてログイン中`;
-
-        loadPreviousAnswers();
-        await showAllResults();
-
-        document.getElementById("loginError").textContent = "";
-        document.getElementById("submitMessage").textContent = "";
-      } else {
-        document.getElementById("loginError").textContent = "パスワードが違います。";
-      }
+  const docSnap = await getDoc(doc(db, "users", id));
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    const hashedInput = await sha256(pass);
+    if (data.password === hashedInput) {
+      window.currentUser = id;
+      window.users[id] = data;
+      document.getElementById("loginSection").classList.add("hidden");
+      document.getElementById("formSection").classList.remove("hidden");
+      document.getElementById("resultSection").classList.remove("hidden");
+      document.getElementById("welcomeMsg").textContent = `${id} さんとしてログイン中`;
+      await renderForm();
+      await loadPreviousAnswers();
+      await showAllResults();
+      document.getElementById("loginError").textContent = "";
+      document.getElementById("submitMessage").textContent = "";
     } else {
-      document.getElementById("loginError").textContent = "IDが存在しません。";
+      document.getElementById("loginError").textContent = "パスワードが違います。";
     }
-  } catch (err) {
-    console.error(err);
-    document.getElementById("loginError").textContent = "ログイン中にエラーが発生しました。";
+  } else {
+    document.getElementById("loginError").textContent = "IDが存在しません。";
   }
 };
 
-// 登録機能
 window.register = async function () {
   const id = document.getElementById("newUserId").value.trim();
   const pass = document.getElementById("newPassword").value;
-
   if (!id || !pass) {
     document.getElementById("registerMessage").textContent = "IDとパスワードを入力してください。";
     return;
   }
-
   if (/[<>]/.test(id)) {
     document.getElementById("registerMessage").textContent = "IDに < や > を含めないでください。";
     return;
   }
-
   const docSnap = await getDoc(doc(db, "users", id));
   if (docSnap.exists()) {
     document.getElementById("registerMessage").textContent = "このIDはすでに使われています。";
   } else {
-    const hashedPass = sha256(pass);
+    const hashedPass = await sha256(pass);
     await setDoc(doc(db, "users", id), {
       password: hashedPass,
       answers: {},
@@ -259,146 +205,37 @@ window.register = async function () {
   }
 };
 
-// 表示切り替え
 window.showRegister = () => {
   document.getElementById("loginSection").classList.add("hidden");
   document.getElementById("registerSection").classList.remove("hidden");
 };
-
 window.backToLogin = () => {
   document.getElementById("registerSection").classList.add("hidden");
   document.getElementById("loginSection").classList.remove("hidden");
 };
 
-
-// ログイン機能
-window.login = async function () {
-  const id = document.getElementById("userId").value.trim();
-  const pass = document.getElementById("password").value;
-
-  if (!id || !pass) {
-    document.getElementById("loginError").textContent = "IDとパスワードを入力してください。";
-    return;
-  }
-
-  try {
-    const docSnap = await getDoc(doc(db, "users", id));
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      const hashedInput = sha256(pass);
-
-      if (data.password === hashedInput) {
-        window.currentUser = id;
-        window.users[id] = data;
-
-        document.getElementById("loginSection").classList.add("hidden");
-        document.getElementById("formSection").classList.remove("hidden");
-        document.getElementById("resultSection").classList.remove("hidden");
-        document.getElementById("welcomeMsg").textContent = `${id} さんとしてログイン中`;
-
-        loadPreviousAnswers();
-        await showAllResults();
-
-        document.getElementById("loginError").textContent = "";
-        document.getElementById("submitMessage").textContent = "";
-      } else {
-        document.getElementById("loginError").textContent = "パスワードが違います。";
-      }
-    } else {
-      document.getElementById("loginError").textContent = "IDが存在しません。";
-    }
-  } catch (err) {
-    console.error(err);
-    document.getElementById("loginError").textContent = "ログイン中にエラーが発生しました。";
-  }
-};
-
-// 表示切り替え
-window.showRegister = () => {
-  document.getElementById("loginSection").classList.add("hidden");
-  document.getElementById("registerSection").classList.remove("hidden");
-};
-
-window.backToLogin = () => {
-  document.getElementById("registerSection").classList.add("hidden");
-  document.getElementById("loginSection").classList.remove("hidden");
-};
-
-// 回答送信
 document.getElementById("scheduleForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-  if (!window.currentUser) {
-    alert("ログインしてください。");
-    return;
-  }
+  if (!window.currentUser) return alert("ログインしてください。");
 
   const answerInputs = document.querySelectorAll('input[type="radio"]:checked');
-const answers = {};
-answerInputs.forEach(input => {
-  const date = input.name.replace("response-", "");  // name 属性から日付を抽出
-  answers[date] = input.value;
-});
-
+  const answers = {};
+  answerInputs.forEach(input => {
+    const date = input.name.replace("response-", "");
+    answers[date] = input.value;
+  });
 
   const comment = document.getElementById("comment").value;
   const prevAnswers = window.users[window.currentUser]?.answers || {};
-
-  const updateData = {
-    answers,
-    comment
-  };
-
-
-  function populateResults(dates, data) {
-  const resultTable = document.getElementById("resultTable");
-  const headerRow = document.getElementById("resultHeaderRow");
-  headerRow.innerHTML = ""; // クリア
-
-  // ヘッダー動的生成
-  const headers = ["ユーザーID", ...dates, "コメント"];
-  headers.forEach(header => {
-    const th = document.createElement("th");
-    th.textContent = header;
-    headerRow.appendChild(th);
-  });
-
-  const tbody = resultTable.querySelector("tbody");
-  tbody.innerHTML = "";
-
-  data.forEach(entry => {
-    const tr = document.createElement("tr");
-
-    const uidTd = document.createElement("td");
-    uidTd.textContent = entry.userId || "";
-    tr.appendChild(uidTd);
-
-    dates.forEach(date => {
-      const td = document.createElement("td");
-      td.textContent = entry.answers?.[date] || "";
-      tr.appendChild(td);
-    });
-
-    const commentTd = document.createElement("td");
-    commentTd.textContent = entry.comment || "";
-    tr.appendChild(commentTd);
-
-    tbody.appendChild(tr);
-  });
-}
-
-
-
-  // 🔴 ログ記録処理（変更があった場合のみ）
+  const prevComment = window.users[window.currentUser]?.comment || "";
 
   const userRef = doc(db, "users", window.currentUser);
-  const prevDoc = await getDoc(userRef);
   const dates = await fetchCandidateDates();
   const logPromises = [];
 
   dates.forEach(date => {
     const oldVal = prevAnswers[date] || "";
     const newVal = answers[date] || "";
-
     if (oldVal !== newVal) {
       logPromises.push(addDoc(collection(db, "logs"), {
         userId: window.currentUser,
@@ -409,9 +246,6 @@ answerInputs.forEach(input => {
       }));
     }
   });
-
-  // コメントの変更もログに記録
-  const prevComment = window.users[window.currentUser]?.comment || "";
   if (comment !== prevComment) {
     logPromises.push(addDoc(collection(db, "logs"), {
       userId: window.currentUser,
@@ -422,10 +256,7 @@ answerInputs.forEach(input => {
     }));
   }
 
-  // ログ書き込み待ち
   await Promise.all(logPromises);
-
-  // Firestoreに回答データを保存
   await setDoc(userRef, {
     ...window.users[window.currentUser],
     answers,
@@ -433,25 +264,6 @@ answerInputs.forEach(input => {
     updatedAt: serverTimestamp()
   });
 
-  // データを再取得して反映
   await showAllResults();
   document.getElementById("submitMessage").textContent = "送信しました！";
-});
-
-
-  // 🔄 タイムスタンプ更新
-  if (JSON.stringify(answers) !== JSON.stringify(prevAnswers)) {
-    updateData.updatedAt = serverTimestamp();
-  }
-
-  await Promise.all([
-    setDoc(doc(db, "users", window.currentUser), updateData, { merge: true }),
-    ...logPromises
-  ]);
-
-  window.users[window.currentUser] = { ...window.users[window.currentUser], ...updateData };
-
-  document.getElementById("submitMessage").textContent = "回答を保存しました！";
-  await showAllResults();
-
 });
