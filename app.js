@@ -22,9 +22,6 @@ window.users = {};
 window.currentUser = "";
 
 
-//firebaseから日付を読み取る
-import { db } from "./firebase"; // ← あなたのfirebase設定に応じて
-
 async function fetchCandidateDates() {
   const docRef = doc(db, "candidates", "list");
   const docSnap = await getDoc(docRef);
