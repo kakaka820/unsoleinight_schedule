@@ -1,3 +1,7 @@
+管理画面　定員変更と日付の追加と削除まで対応（未連携）
+ログ実装はまだ。ログ実装（絞り込み機能含む、最新100件の保存）実装済、ただし表示されるのがIDと
+日付の追加を削除の同期を行う予定  
+ユーザー管理はUID、元の状態と更新後表記まで対応。
 
 
 
@@ -485,20 +489,30 @@ let currentUserId = null;
 let currentUid = null;
 
 
-     if (idInput === ADMIN_ID && pwInput === ADMIN_PW) {
-  // ログイン成功
-  currentUserId = "管理者";   // 任意の表示名
-  currentUid = "adminUID";    // 固定UID（管理者識別のため）
+document.getElementById("loginBtn").addEventListener("click", async () => {
+  const id = document.getElementById("adminId").value.trim();
+  const pw = document.getElementById("adminPw").value.trim();
+  const msg = document.getElementById("loginMessage");
 
-  document.getElementById("loginSection").classList.add("hidden");
-  document.getElementById("adminSection").classList.remove("hidden");
-  displayMaxCapacity();
-  displayDates();
-  loadLogs();
-} else {
-  msg.textContent = "IDまたはパスワードが間違っています。";
-  msg.style.color = "red";
-}
+  if (id === ADMIN_ID && pw === ADMIN_PW) {
+    msg.textContent = "ログイン成功！";
+    msg.style.color = "green";
+    document.getElementById("loginSection").classList.add("hidden");
+    document.getElementById("adminSection").classList.remove("hidden");
+
+    // UIDとユーザー名の設定（将来的にはAuthベースで）
+    currentUserId = "管理者";
+    currentUid = "admin-uid";  // 適宜ここをFirebase AuthenticationのUIDなどにする
+
+    await displayMaxCapacity();
+    await displayDates();
+    const logs = await fetchLogs();
+    renderLogs(logs);
+  } else {
+    msg.textContent = "IDまたはパスワードが間違っています。";
+    msg.style.color = "red";
+  }
+});
 
     }
 
