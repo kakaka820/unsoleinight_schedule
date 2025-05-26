@@ -420,27 +420,52 @@ answerInputs.forEach(input => {
 
   // 🔴 ログ記録処理（変更があった場合のみ）
 
-const userRef = doc(db, "users", window.currentUser);
-const prevDoc = await getDoc(userRef);
-const dates = await fetchCandidateDates();
-const logPromises = [];
+  const userRef = doc(db, "users", window.currentUser);
+  const prevDoc = await getDoc(userRef);
+  const dates = await fetchCandidateDates();
+  const logPromises = [];
 
-dates.forEach(date => {
-  const oldVal = prevAnswers[date] || "";
-  const newVal = answers[date] || "";
+  dates.forEach(date => {
+    const oldVal = prevAnswers[date] || "";
+    const newVal = answers[date] || "";
 
-  if (oldVal !== newVal) {
-    logPromises.push(
-      addDoc(collection(db, "logs"), {
-        uid: window.currentUser,
-        user: window.currentUser,
+    if (oldVal !== newVal) {
+      logPromises.push(addDoc(collection(db, "logs"), {
+        userId: window.currentUser,
         date,
         from: oldVal,
         to: newVal,
-        timestamp: new Date()
-      })
-    );
+        timestamp: serverTimestamp()
+      }));
+    }
+  });
+
+  // コメントの変更もログに記録
+  const prevComment = window.users[window.currentUser]?.comment || "";
+  if (comment !== prevComment) {
+    logPromises.push(addDoc(collection(db, "logs"), {
+      userId: window.currentUser,
+      field: "comment",
+      from: prevComment,
+      to: comment,
+      timestamp: serverTimestamp()
+    }));
   }
+
+  // ログ書き込み待ち
+  await Promise.all(logPromises);
+
+  // Firestoreに回答データを保存
+  await setDoc(userRef, {
+    ...window.users[window.currentUser],
+    answers,
+    comment,
+    updatedAt: serverTimestamp()
+  });
+
+  // データを再取得して反映
+  await showAllResults();
+  document.getElementById("submitMessage").textContent = "送信しました！";
 });
 
 
