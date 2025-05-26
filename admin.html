@@ -160,16 +160,35 @@ a
 </head>
 <body>
 
-  <h1>管理者ログイン</h1>
+  
 
-  <div class="container" id="loginSection">
+   <!-- ログインセクション -->
+  <div id="loginSection">
+
+
+
+
+
+
+
+
+
+<h1>管理者ログイン</h1>
     <label for="adminId">管理者ID:</label>
-    <input type="text" id="adminId" autocomplete="username" />
+    <input type="text" id="adminId" />
     <label for="adminPw">パスワード:</label>
-    <input type="password" id="adminPw" autocomplete="current-password" />
+    <input type="password" id="adminPw" />
     <button id="loginBtn">ログイン</button>
-    <p id="loginMessage" class="status-message"></p>
+    <p id="loginMessage"></p>
   </div>
+
+
+
+
+
+
+
+
 
   <div class="container hidden" id="adminSection">
 
@@ -183,11 +202,22 @@ a
     <hr style="margin: 40px 0;" />
 
     <h2>イベント日程の管理</h2>
-    <label for="newDateInput">新しい日程を追加：</label>
     <input type="text" id="newDateInput" placeholder="例：2025-06-01 19:00〜" />
     <button id="addDateBtn">追加</button>
     <ul id="datesList"></ul>
-    <p id="datesMessage" class="status-message"></p>
+    <p id="datesMessage"></p>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
 
     <hr style="margin: 40px 0;" />
 
@@ -307,78 +337,119 @@ let currentUid = "";
     async function displayDates() {
       const list = document.getElementById("datesList");
       list.innerHTML = "";
-      const dates = await getDates();
+      try {
+        const doc = await db.collection("settings").doc("eventDates").get();
+        if (doc.exists) {
+          const data = doc.data();
+          const dates = data.list || [];
+          if (dates.length === 0) {
+            list.innerHTML = "<li>登録されている日程がありません。</li>";
+            return;
+          }
+dates.forEach((dateStr, index) => {
+            const li = document.createElement("li");
+            li.textContent = dateStr;
+const editBtn = document.createElement("button");
+            editBtn.textContent = "編集";
+            editBtn.onclick = () => editDate(index, dateStr);
 
-      if (dates.length === 0) {
-        list.innerHTML = "<li>登録されている日程がありません。</li>";
-        return;
-      }
+            const delBtn = document.createElement("button");
+            delBtn.textContent = "削除";
+            delBtn.onclick = () => removeDate(dateStr);
 
-      for (const d of dates) {
-        const li = document.createElement("li");
-        li.textContent = d.date;
-
-        const delBtn = document.createElement("button");
-        delBtn.textContent = "削除";
-     delBtn.onclick = async () => {
-  if (confirm(`日程「${d.date}」を削除しますか？`)) {
-    await removeDate(d.id);  // userId や uid は内部で使う
-  }
-};
-
-
-        li.appendChild(delBtn);
-        list.appendChild(li);
+            li.appendChild(editBtn);
+            li.appendChild(delBtn);
+            list.appendChild(li);
+          });
+} else {
+          list.innerHTML = "<li>日程データが存在しません。</li>";
+        }
+      } catch (e) {
+        console.error("日程取得失敗:", e);
+        list.innerHTML = "<li>日程の取得に失敗しました。</li>";
       }
     }
 
-   async function addDate(dateStr, user, uid) {
-  try {
-    await db.collection("dates").add({
-      date: dateStr,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+// 日程の追加
+    document.getElementById("addDateBtn").addEventListener("click", async () => {
+      const dateStr = document.getElementById("newDateInput").value.trim();
+      const msg = document.getElementById("datesMessage");
+      msg.textContent = "";
+
+      if (!dateStr) {
+        msg.textContent = "日程を入力してください。";
+        msg.style.color = "red";
+        return;
+      }
+ try {
+        await db.collection("settings").doc("eventDates").update({
+          list: firebase.firestore.FieldValue.arrayUnion(dateStr)
+        });
+        msg.textContent = "日程を追加しました。";
+        msg.style.color = "green";
+        document.getElementById("newDateInput").value = "";
+        displayDates();
+      } catch (e) {
+        console.error("日程追加失敗:", e);
+        msg.textContent = "日程の追加に失敗しました。";
+        msg.style.color = "red";
+      }
     });
-    await addLog({ 
-      user: user,
-      uid: uid,
-      from: "-",
-      to: `日程追加: ${dateStr}`
-    });
-    await displayDates();
-    document.getElementById("datesMessage").textContent = "日程を追加しました。";
-    document.getElementById("datesMessage").style.color = "green";
+
+// 日程の削除
+    async function removeDate(dateStr) {
+      const msg = document.getElementById("datesMessage");
+      msg.textContent = "";
+
+      if (!confirm(`日程「${dateStr}」を削除しますか？`)) return;
+
+      try {
+        await db.collection("settings").doc("eventDates").update({
+          list: firebase.firestore.FieldValue.arrayRemove(dateStr)
+        });
+        msg.textContent = "日程を削除しました。";
+        msg.style.color = "green";
+        displayDates();
+
   } catch (e) {
-    console.error("日程追加失敗:", e);
-    document.getElementById("datesMessage").textContent = "日程の追加に失敗しました。";
-    document.getElementById("datesMessage").style.color = "red";
-  }
-}
+        console.error("日程削除失敗:", e);
+        msg.textContent = "日程の削除に失敗しました。";
+        msg.style.color = "red";
+      }
+    }
+      
+// 日程の編集
+    async function editDate(index, oldDateStr) {
+      const newDateStr = prompt("新しい日程を入力してください：", oldDateStr);
+      if (!newDateStr || newDateStr === oldDateStr) return;
+
+      const msg = document.getElementById("datesMessage");
+      msg.textContent = "";
+
+      try {
+        const docRef = db.collection("settings").doc("eventDates");
+        const doc = await docRef.get();
+        if (doc.exists) {
+          const data = doc.data();
+          const dates = data.list || [];
+          dates[index] = newDateStr;
+          await docRef.update({ list: dates });
+          msg.textContent = "日程を更新しました。";
+msg.style.color = "green";
+          displayDates();
+        } else {
+          msg.textContent = "日程データが存在しません。";
+          msg.style.color = "red";
+        }
+      } catch (e) {
+        console.error("日程更新失敗:", e);
+        msg.textContent = "日程の更新に失敗しました。";
+        msg.style.color = "red";
+      }
+    }
 
 
-
-    async function removeDate(id) {
-  try {
-    const doc = await db.collection("dates").doc(id).get();
-    if (!doc.exists) return;
-
-    const dateStr = doc.data().date;
-    await db.collection("dates").doc(id).delete();
-    await addLog({ 
-      user: currentUserId,
-      uid: currentUid,
-      from: `日程削除: ${dateStr}`,
-      to: "-"
-    });
-    await displayDates();
-    document.getElementById("datesMessage").textContent = "日程を削除しました。";
-    document.getElementById("datesMessage").style.color = "green";
-  } catch (e) {
-    console.error("日程削除失敗:", e);
-    document.getElementById("datesMessage").textContent = "日程の削除に失敗しました。";
-    document.getElementById("datesMessage").style.color = "red";
-  }
-}
-
+  
 
     // --- ログ管理 ---
 
