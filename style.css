@@ -13,6 +13,22 @@ body {
   margin-bottom: 30px;
   overflow-x: auto;
 }
+
+button {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 0.6em 1em;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
 .hidden {
   display: none;
 }
@@ -56,20 +72,6 @@ textarea {
     text-align: left;
     padding: 0.8em;
   }
-
-tr {
-    margin-bottom: 1em;
-    border-bottom: 1px solid #ccc;
-  }
-td::before {
-    content: attr(data-label);
-    font-weight: bold;
-    display: block;
-    margin-bottom: 0.3em;
-  }
-}
-
-
   
 #resultSection {
   overflow-x: auto;
