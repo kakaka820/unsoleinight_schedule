@@ -1,9 +1,6 @@
-
 // Firebase モジュールのインポート
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
-
-
 
 // Firebase 設定と初期化
 const firebaseConfig = {
@@ -21,39 +18,35 @@ const db = getFirestore(app);
 // グローバル変数
 window.users = {};
 window.currentUser = "";
-
+const maruUsers = {}; // ✅ 宣言を1回だけに統一
 
 async function fetchCandidateDates() {
-  const docRef = doc(db, "settings", "eventDates");  // ← ここを変更！
+  const docRef = doc(db, "settings", "eventDates");
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    return docSnap.data().list || []; // ← フィールド名に合わせて変更！
+    return docSnap.data().list || [];
   } else {
     console.log("No such document!");
     return [];
   }
 }
 
-
-//取得した日付でフォームの行を動的に生成
 async function renderForm() {
   const dates = await fetchCandidateDates();
-  const tbody = document.getElementById("form-body"); // tbodyに候補日を入れる想定
+  const tbody = document.getElementById("form-body");
 
   dates.forEach((date) => {
     const row = document.createElement("tr");
 
-    // 日付のセル
     const dateCell = document.createElement("td");
     dateCell.textContent = date;
     row.appendChild(dateCell);
 
-    // 選択肢（〇△×）のラジオボタン
     ["〇", "△", "×"].forEach((choice) => {
       const td = document.createElement("td");
       const input = document.createElement("input");
       input.type = "radio";
-      input.name = `response-${date}`; // 同じ日付でグループ化
+      input.name = `response-${date}`;
       input.value = choice;
       td.appendChild(input);
       row.appendChild(td);
@@ -65,16 +58,10 @@ async function renderForm() {
 
 renderForm();
 
-
-
-
-
-// 回答の読み込み
 async function loadPreviousAnswers() {
   const userData = window.users[window.currentUser] || {};
   const answers = userData.answers || {};
   const comment = userData.comment || "";
-
   const dates = await fetchCandidateDates();
 
   dates.forEach(date => {
@@ -87,7 +74,7 @@ async function loadPreviousAnswers() {
 
   document.getElementById("comment").value = comment;
 }
-// 回答の集計と表示
+
 async function showAllResults() {
   const tbody = document.getElementById("resultTable").querySelector("tbody");
   const status = document.getElementById("maruStatusResult");
@@ -96,16 +83,10 @@ async function showAllResults() {
 
   try {
     const configSnap = await getDoc(doc(db, "settings", "capacity"));
-    let MAX;
+    let MAX = 3;
     if (configSnap.exists()) {
       MAX = configSnap.data().maxCapacity;
-      console.log("Firestoreから取得した maxCapacity:", MAX);
-    } else {
-      console.warn("settings/capacity ドキュメントが見つかりません。デフォルト値 3 を使用します。");
-      MAX = 3;
     }
-
-    const MIN_HIGHLIGHT = MAX;
 
     const docsArray = [];
     const snapshot = await getDocs(collection(db, "users"));
@@ -120,75 +101,59 @@ async function showAllResults() {
     });
 
     window.users = {};
-   const dates = await fetchCandidateDates();
-dates.forEach(date => {
-  maruUsers[date] = [];
-});
+    const dates = await fetchCandidateDates();
 
+    dates.forEach(date => {
+      maruUsers[date] = [];
+    });
 
-    const candidateDates = await fetchCandidateDates();
-candidateDates.forEach(date => {
-  maruUsers[date] = [];
-});
-
-docsArray.forEach(({ id, data }) => {
-  window.users[id] = data;
-  const a = data.answers || {};
-  candidateDates.forEach(date => {
-    if (a[date] === "〇") {
-      maruUsers[date].push(id);
-    }
-  });
-});
-
+    docsArray.forEach(({ id, data }) => {
+      window.users[id] = data;
+      const a = data.answers || {};
+      dates.forEach(date => {
+        if (a[date] === "〇") {
+          maruUsers[date].push(id);
+        }
+      });
+    });
 
     const highlighted = {};
-dates.forEach(date => {
-  highlighted[date] = maruUsers[date].length >= MAX ? maruUsers[date].slice(0, MAX) : [];
-});
-
+    dates.forEach(date => {
+      highlighted[date] = maruUsers[date].length >= MAX ? maruUsers[date].slice(0, MAX) : [];
+    });
 
     if (Object.values(maruUsers).some(arr => arr.length >= MAX)) {
       if (status) status.textContent = "この会はすでに満席となりました。以降は観戦/リザーバー枠での参加を募集いたします。";
     }
 
-  const candidateDates = await fetchCandidateDates();
+    docsArray.forEach(({ id, data }) => {
+      const a = data.answers || {};
+      const c = data.comment || "";
+      const hasAnyAnswer = dates.some(date => a[date]);
+      if (!hasAnyAnswer && !c) return;
 
-docsArray.forEach(({ id, data }) => {
-  const a = data.answers || {};
-  const c = data.comment || "";
+      const row = document.createElement("tr");
 
-  // すべての日付の回答が空 AND コメントも空ならスキップ
-  const hasAnyAnswer = candidateDates.some(date => a[date]);
-  if (!hasAnyAnswer && !c) return;
+      const idCell = document.createElement("td");
+      idCell.textContent = id;
+      row.appendChild(idCell);
 
-  const row = document.createElement("tr");
+      dates.forEach(date => {
+        const cell = document.createElement("td");
+        const answer = a[date] || "";
+        if (highlighted[date]?.includes(id)) {
+          cell.classList.add("highlight");
+        }
+        cell.textContent = answer;
+        row.appendChild(cell);
+      });
 
-  // IDセル
-  const idCell = document.createElement("td");
-  idCell.textContent = id;
-  row.appendChild(idCell);
+      const commentCell = document.createElement("td");
+      commentCell.textContent = c;
+      row.appendChild(commentCell);
 
-  // 各候補日セル
-  candidateDates.forEach(date => {
-    const cell = document.createElement("td");
-    const answer = a[date] || "";
-    if (highlighted[date]?.includes(id)) {
-      cell.classList.add("highlight");
-    }
-    cell.textContent = answer;
-    row.appendChild(cell);
-  });
-
-  // コメントセル
-  const commentCell = document.createElement("td");
-  commentCell.textContent = c;
-  row.appendChild(commentCell);
-
-  tbody.appendChild(row);
-});
-
-
+      tbody.appendChild(row);
+    });
 
   } catch (err) {
     console.error("データ取得エラー:", err);
@@ -419,3 +384,4 @@ logPromises.push(
   document.getElementById("submitMessage").textContent = "回答を保存しました！";
   await showAllResults();
 });
+
