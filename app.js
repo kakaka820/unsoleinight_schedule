@@ -1,10 +1,3 @@
-回答時のアンサーズを動的に修正、結果表示を動的に修正
-前回回答の読み込みは未修正
-
-チェックしてほしい：showAllResults() 関数全体を candidateDates に基づいた動的処理に書き直しがうまくできているかどうか
-
-
-
 // Firebase モジュールのインポート
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
