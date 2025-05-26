@@ -14,10 +14,9 @@ body {
   overflow-x: auto;
 }
 .container input {
-  display: block;
   width: 100%;
   max-width: 300px;
-  margin: 0 auto 16px auto; /* ← 下に16pxの余白 */
+  margin: 0 auto 8px auto; /* ← 下に16pxの余白 */
   padding: 10px;
   font-size: 16px;
   box-sizing: border-box;
