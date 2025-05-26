@@ -362,6 +362,7 @@ if (log.timestamp) {
   timeTd.textContent = "-";
 }
 tr.appendChild(timeTd);
+    tbody.appendChild(tr); 
 });
 // --- ログイン処理 ---
 
