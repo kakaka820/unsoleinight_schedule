@@ -35,26 +35,7 @@ async function renderForm() {
   const dates = await fetchCandidateDates();
 
 
-  // ヘッダー生成
-  const thead = document.getElementById("formHeader");
-  thead.innerHTML = ""; // クリア
-  const headerRow = document.createElement("tr");
 
-  const thUser = document.createElement("th");
-  thUser.textContent = "ユーザーID";
-  headerRow.appendChild(thUser);
-
-  dates.forEach((date, index) => {
-    const th = document.createElement("th");
-    th.textContent = date;
-    headerRow.appendChild(th);
-  });
-
-  const thComment = document.createElement("th");
-  thComment.textContent = "コメント";
-  headerRow.appendChild(thComment);
-
-  thead.appendChild(headerRow);
 
   // フォーム本体（tbody）生成
   const tbody = document.getElementById("form-body");
@@ -101,6 +82,29 @@ async function loadPreviousAnswers() {
 }
 
 async function showAllResults() {
+
+  // ヘッダー生成
+  const thead = document.getElementById("formHeader");
+  thead.innerHTML = ""; // クリア
+  const headerRow = document.createElement("tr");
+
+  const thUser = document.createElement("th");
+  thUser.textContent = "ユーザーID";
+  headerRow.appendChild(thUser);
+
+  dates.forEach((date, index) => {
+    const th = document.createElement("th");
+    th.textContent = date;
+    headerRow.appendChild(th);
+  });
+
+  const thComment = document.createElement("th");
+  thComment.textContent = "コメント";
+  headerRow.appendChild(thComment);
+
+  thead.appendChild(headerRow);
+
+
   const tbody = document.getElementById("resultTable").querySelector("tbody");
   const status = document.getElementById("maruStatusResult");
   tbody.innerHTML = "";
