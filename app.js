@@ -383,5 +383,46 @@ logPromises.push(
 
   document.getElementById("submitMessage").textContent = "回答を保存しました！";
   await showAllResults();
+
 });
+
+
+function populateResults(dates, data) {
+  const resultTable = document.getElementById("resultTable");
+  const headerRow = document.getElementById("resultHeaderRow");
+  headerRow.innerHTML = ""; // クリア
+
+  // ヘッダー動的生成
+  const headers = ["ユーザーID", ...dates, "コメント"];
+  headers.forEach(header => {
+    const th = document.createElement("th");
+    th.textContent = header;
+    headerRow.appendChild(th);
+  });
+
+  const tbody = resultTable.querySelector("tbody");
+  tbody.innerHTML = "";
+
+  data.forEach(entry => {
+    const tr = document.createElement("tr");
+
+    const uidTd = document.createElement("td");
+    uidTd.textContent = entry.userId || "";
+    tr.appendChild(uidTd);
+
+    dates.forEach(date => {
+      const td = document.createElement("td");
+      td.textContent = entry.answers?.[date] || "";
+      tr.appendChild(td);
+    });
+
+    const commentTd = document.createElement("td");
+    commentTd.textContent = entry.comment || "";
+    tr.appendChild(commentTd);
+
+    tbody.appendChild(tr);
+  });
+}
+
+
 
