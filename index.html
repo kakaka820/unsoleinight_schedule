@@ -1,72 +1,65 @@
 <!DOCTYPE html>
 <html lang="ja">
-  <style>
-    
-body {
-  font-family: sans-serif;
-  background-color: #f0f8ff;
-  padding: 20px;
-}
-.container {
-  max-width: 800px;
-  margin: auto;
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px #aaa;
-  margin-bottom: 30px;
-  overflow-x: auto;
-}
-.hidden {
-  display: none;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-th, td {
-  border: 1px solid #ccc;
-  text-align: center;
-  padding: 8px;
-}
-th {
-  background-color: #e0f0ff;
-}
-textarea {
-  width: 100%;
-  height: 60px;
-}
-.highlight {
-  background-color: #ffcccc;
-}
-#submitMessage {
-  color: green;
-}
-#loginError, #registerMessage {
-  color: red;
-}
-.fullMsg {
-  color: red;
-  font-weight: bold;
-}
-@media (max-width: 600px) {
-  table, thead, tbody, th, td, tr {
-    font-size: 14px;
-  }
-}
-#resultSection {
-  overflow-x: auto;
-}
-#resultTable {
-  min-width: 600px;
-}
-</style>
 <head>
   <meta charset="UTF-8">
   <title>日程調整アプリ</title>
   <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f0f8ff;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #aaa;
+      margin-bottom: 30px;
+      overflow-x: auto;
+    }
     .hidden { display: none; }
-    .highlight { background-color: #f88; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      text-align: center;
+      padding: 8px;
+    }
+    th {
+      background-color: #e0f0ff;
+    }
+    textarea {
+      width: 100%;
+      height: 60px;
+    }
+    .highlight {
+      background-color: #ffcccc;
+    }
+    #submitMessage {
+      color: green;
+    }
+    #loginError, #registerMessage {
+      color: red;
+    }
+    .fullMsg {
+      color: red;
+      font-weight: bold;
+    }
+    @media (max-width: 600px) {
+      table, thead, tbody, th, td, tr {
+        font-size: 14px;
+      }
+    }
+    #resultSection {
+      overflow-x: auto;
+    }
+    #resultTable {
+      min-width: 600px;
+    }
   </style>
 </head>
 <body>
@@ -75,7 +68,7 @@ textarea {
     <input id="userId" placeholder="ユーザーID"><br>
     <input id="password" type="password" placeholder="パスワード"><br>
     <button onclick="login()">ログイン</button>
-    <p id="loginError" style="color: red;"></p>
+    <p id="loginError"></p>
     <button onclick="showRegister()">新規登録はこちら</button>
   </div>
 
@@ -92,30 +85,30 @@ textarea {
     <h2>日程調整フォーム</h2>
     <p id="welcomeMsg"></p>
     <form id="scheduleForm">
-      <table>
-        <table id="form-table" border="1">
-      <thead>
-        <tr>
-          <th>日付</th>
-          <th>〇</th>
-          <th>△</th>
-          <th>×</th>
-        </tr>
-      </thead>
+      <table id="form-table">
+        <thead>
+          <tr>
+            <th>日付</th>
+            <th>〇</th>
+            <th>△</th>
+            <th>×</th>
+          </tr>
+        </thead>
         <tbody id="form-body"></tbody>
       </table>
       <textarea id="comment" placeholder="コメント"></textarea><br>
       <button type="submit">送信</button>
     </form>
-    <p id="submitMessage" style="color: green;"></p>
+    <p id="submitMessage"></p>
   </div>
 
   <div id="resultSection" class="hidden">
     <h2>回答一覧</h2>
     <p id="maruStatusResult"></p>
     <table id="resultTable">
-     <thead><tr id="headerRow"></tr></thead> 
-      <thead><tr id="resultHeaderRow"></tr></thead>
+      <thead>
+        <tr id="resultHeaderRow"></tr>
+      </thead>
       <tbody></tbody>
     </table>
   </div>
@@ -128,7 +121,7 @@ textarea {
       apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
       authDomain: "unsoleinight-schedule.firebaseapp.com",
       projectId: "unsoleinight-schedule",
-      storageBucket: "unsoleinight-schedule.firebasestorage.app",
+      storageBucket: "unsoleinight-schedule.appspot.com",
       messagingSenderId: "1040333692698",
       appId: "1:1040333692698:web:fb0e4f481dff8167f756a3"
     };
@@ -142,9 +135,9 @@ textarea {
 
     function sha256(str) {
       const buffer = new TextEncoder().encode(str);
-      return crypto.subtle.digest("SHA-256", buffer).then(buf => {
-        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
-      });
+      return crypto.subtle.digest("SHA-256", buffer).then(buf =>
+        Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("")
+      );
     }
 
     async function fetchCandidateDates() {
@@ -196,9 +189,8 @@ textarea {
 
     async function showAllResults() {
       const dates = await fetchCandidateDates();
-      const thead = document.getElementById("formHeader");
-      thead.innerHTML = "";
-      const headerRow = document.createElement("tr");
+      const headerRow = document.getElementById("resultHeaderRow");
+      headerRow.innerHTML = "";
 
       const thUser = document.createElement("th");
       thUser.textContent = "ユーザーID";
@@ -213,8 +205,6 @@ textarea {
       const thComment = document.createElement("th");
       thComment.textContent = "コメント";
       headerRow.appendChild(thComment);
-
-      thead.appendChild(headerRow);
 
       const tbody = document.getElementById("resultTable").querySelector("tbody");
       const status = document.getElementById("maruStatusResult");
@@ -252,6 +242,7 @@ textarea {
         const a = data.answers || {};
         const c = data.comment || "";
         if (!Object.keys(a).length && !c) return;
+
         const row = document.createElement("tr");
         const idCell = document.createElement("td");
         idCell.textContent = id;
@@ -292,7 +283,7 @@ textarea {
           document.getElementById("resultSection").classList.remove("hidden");
           document.getElementById("welcomeMsg").textContent = `${id} さんとしてログイン中`;
           await renderForm();
-          loadPreviousAnswers();
+          await loadPreviousAnswers();
           await showAllResults();
           document.getElementById("loginError").textContent = "";
           document.getElementById("submitMessage").textContent = "";
@@ -380,8 +371,8 @@ textarea {
           timestamp: serverTimestamp()
         }));
       }
-      await Promise.all(logPromises);
 
+      await Promise.all(logPromises);
       await setDoc(userRef, {
         ...window.users[window.currentUser],
         answers,
