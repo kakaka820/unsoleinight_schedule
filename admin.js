@@ -237,7 +237,7 @@ async function displayLogs(filterUser = "", filterDate = "") {
 
     // ユーザー
     const userTd = document.createElement("td");
-    userTd.textContent = log.user;
+    userTd.textContent = log.userId;
     tr.appendChild(userTd);
 
     // UID
