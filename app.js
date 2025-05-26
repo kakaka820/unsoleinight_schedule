@@ -34,6 +34,7 @@ async function fetchCandidateDates() {
 async function renderForm() {
   const dates = await fetchCandidateDates();
 
+
   // ヘッダー生成
   const thead = document.getElementById("formHeader");
   thead.innerHTML = ""; // クリア
@@ -63,7 +64,7 @@ async function renderForm() {
     const row = document.createElement("tr");
 
     const dateCell = document.createElement("td");
-     th.textContent = `日付${index + 1} (${date})`; // またはただの date にすることも可能
+   dateCell.textContent = `日付 (${date})`;  // またはただの date にすることも可能
     row.appendChild(dateCell);
 
     ["〇", "△", "×"].forEach((choice) => {
