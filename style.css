@@ -16,12 +16,19 @@ body {
 .container input {
   width: 100%;
   max-width: 300px;
+  margin: 0 auto 8px auto; /* ← 下に8pxの余白 */
+  padding: 10px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+.container register{
+  width: 100%;
+  max-width: 300px;
   margin: 0 auto 8px auto; /* ← 下に16pxの余白 */
   padding: 10px;
   font-size: 16px;
   box-sizing: border-box;
 }
-#registerSection input:last-of-type,
 button {
   background-color: #4caf50;
   color: white;
