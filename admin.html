@@ -1,8 +1,4 @@
 管理画面　定員変更と日付の追加と削除まで対応（未連携）
-ログ実装はまだ。ログ実装（絞り込み機能含む、最新100件の保存）実装済、ただし表示されるのがIDと
-日付の追加を削除の同期を行う予定  
-水曜日にお父さん来たら管理者権限の付与も進める。
-ユーザー管理はUIDも書くといいな。
 
 <!DOCTYPE html>
 <html lang="ja">
@@ -322,7 +318,12 @@
         delBtn.textContent = "削除";
         delBtn.onclick = () => {
           if (confirm(`日程「${d.date}」を削除しますか？`)) {
-            removeDate(d.id, ADMIN_ID);
+            await addLog({ 
+  user: userId,
+  uid: "-",              // 管理者なので任意の固定値
+  from: "-", 
+  to: `日程追加: ${dateStr}`
+});
           }
         };
         li.appendChild(delBtn);
@@ -336,7 +337,12 @@
           date: dateStr,
           timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         });
-        await addLog(userId, `日程追加: ${dateStr}`);
+       await addLog({ 
+  user: userId,
+  uid: "-",              // 管理者なので任意の固定値
+  from: "-", 
+  to: `日程追加: ${dateStr}`
+});
         await displayDates();
         document.getElementById("datesMessage").textContent = "日程を追加しました。";
         document.getElementById("datesMessage").style.color = "green";
@@ -420,17 +426,19 @@
     toTd.textContent = log.to || "-";
     tr.appendChild(toTd);
 
-    const dateTd = document.createElement("td");
-    dateTd.textContent = log.timestamp && log.timestamp.toDate
-      ? log.timestamp.toDate().toLocaleDateString()
-      : "-";
-    tr.appendChild(dateTd);
+const dateTd = document.createElement("td");
+dateTd.textContent = log.field || "-"; // アンケートの「日付」文字列
+tr.appendChild(dateTd);
 
-    const timeTd = document.createElement("td");
-    timeTd.textContent = log.timestamp && log.timestamp.toDate
-      ? log.timestamp.toDate().toLocaleTimeString()
-      : "-";
-    tr.appendChild(timeTd);
+const timeTd = document.createElement("td");
+if (log.timestamp && typeof log.timestamp.toDate === "function") {
+  const date = log.timestamp.toDate();
+  timeTd.textContent = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+} else {
+  timeTd.textContent = "-";
+}
+tr.appendChild(timeTd);
+
 
     tbody.appendChild(tr);
   }
@@ -450,8 +458,8 @@
       if (dateFilterVal) {
         logs = logs.filter(log => {
           if (!log.timestamp || !log.timestamp.toDate) return false;
-          const logDate = log.timestamp.toDate().toISOString().slice(0, 10);
-          return logDate === dateFilterVal;
+         const logDate = log.field;
+return logDate === dateFilterVal;
         });
       }
       renderLogs(logs);
