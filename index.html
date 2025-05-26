@@ -50,29 +50,18 @@
 
   <form id="scheduleForm">
     <table>
-      <thead>
-        <tr><th>日付</th><th>〇</th><th>△</th><th>✕</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>5月25日(土)</td>
-          <td><label><input type="radio" name="date1" value="〇" required></label></td>
-          <td><label><input type="radio" name="date1" value="△" required></label></td>
-          <td><label><input type="radio" name="date1" value="✕" required></label></td>
-        </tr>
-        <tr>
-          <td>5月26日(日)</td>
-          <td><label><input type="radio" name="date2" value="〇" required></label></td>
-          <td><label><input type="radio" name="date2" value="△" required></label></td>
-          <td><label><input type="radio" name="date2" value="✕" required></label></td>
-        </tr>
-        <tr>
-          <td>5月29日(水)</td>
-          <td><label><input type="radio" name="date3" value="〇" required></label></td>
-          <td><label><input type="radio" name="date3" value="△" required></label></td>
-          <td><label><input type="radio" name="date3" value="✕" required></label></td>
-        </tr>
-      </tbody>
+  <thead>
+    <tr>
+      <th>日付</th>
+      <th>〇</th>
+      <th>△</th>
+      <th>×</th>
+    </tr>
+  </thead>
+  <tbody id="form-body">
+    <!-- JavaScriptで日付ごとに行が追加される -->
+  </tbody>
+</table>
     </table>
 
     <br>
