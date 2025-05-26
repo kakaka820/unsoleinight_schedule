@@ -1,84 +1,327 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>日程調整アンケート</title>
-  <link rel="stylesheet" href="style.css" />
-
-  <!-- ✅ Firebaseを使ったモジュールスクリプト -->
-  <script type="module" src="./app.js" defer></script>
-
-  <!-- ✅ パスワードハッシュ用のSHA256ライブラリ -->
-  <script src="https://cdn.jsdelivr.net/npm/js-sha256@0.9.0/src/sha256.min.js"></script>
+  <meta charset="UTF-8">
+  <title>日程調整アプリ</title>
+  <style>
+    .hidden { display: none; }
+    .highlight { background-color: #f88; }
+  </style>
 </head>
 <body>
-
-  <!-- 🔒 ログインセクション -->
-  <div class="container" id="loginSection">
+  <div id="loginSection">
     <h2>ログイン</h2>
-    <label for="userId">ユーザーID:</label><br>
-    <input type="text" id="userId" name="userId" placeholder="ID" /><br><br>
-
-    <label for="password">パスワード:</label><br>
-    <input type="password" id="password" name="password" placeholder="パスワード" /><br><br>
-
+    <input id="userId" placeholder="ユーザーID"><br>
+    <input id="password" type="password" placeholder="パスワード"><br>
     <button onclick="login()">ログイン</button>
-    <button onclick="showRegister()">新規登録</button>
-    <p id="loginError"></p>
+    <p id="loginError" style="color: red;"></p>
+    <button onclick="showRegister()">新規登録はこちら</button>
   </div>
 
-  <!-- 📝 新規登録セクション -->
-  <div class="container hidden" id="registerSection">
-    <h2>新規アカウント登録</h2>
-    <label for="newUserId">新しいID:</label><br>
-    <input type="text" id="newUserId" name="newUserId" placeholder="新しいID" /><br><br>
-
-    <label for="newPassword">新しいパスワード:</label><br>
-    <input type="password" id="newPassword" name="newPassword" placeholder="新しいパスワード" /><br><br>
-
+  <div id="registerSection" class="hidden">
+    <h2>新規登録</h2>
+    <input id="newUserId" placeholder="ユーザーID"><br>
+    <input id="newPassword" type="password" placeholder="パスワード"><br>
     <button onclick="register()">登録</button>
-    <button onclick="backToLogin()">戻る</button>
     <p id="registerMessage"></p>
+    <button onclick="backToLogin()">ログインに戻る</button>
   </div>
 
-  <!-- 📅 日程調整フォームセクション -->
-  <div class="container hidden" id="formSection">
-    <h2>日程調整アンケート</h2>
+  <div id="formSection" class="hidden">
+    <h2>日程調整フォーム</h2>
     <p id="welcomeMsg"></p>
-    <p id="maruStatusResult" class="fullMsg"></p>
-
     <form id="scheduleForm">
-      <!-- フォーム用テーブル -->
-      <table id="scheduleFormTable">
-       <thead id="formHeader">
-        </thead>
-        <tbody id="form-body">
-        </tbody>
+      <table>
+        <thead id="formHeader"></thead>
+        <tbody id="form-body"></tbody>
       </table>
-
-      <br>
-      <label for="comment">コメント（任意）:</label><br>
-      <textarea id="comment" name="comment" placeholder="コメントの追記のみでは列の変更は起きません。赤枠で強調表示されるのは開催される村のうち、参加エントリーが早かった方のみです。"></textarea><br><br>
-
-      <button type="submit">送信・更新</button>
-      <p id="submitMessage"></p>
+      <textarea id="comment" placeholder="コメント"></textarea><br>
+      <button type="submit">送信</button>
     </form>
+    <p id="submitMessage" style="color: green;"></p>
   </div>
 
-  <!-- 📊 結果セクション -->
-  <div class="container hidden" id="resultSection">
-    <h2>全回答一覧</h2>
+  <div id="resultSection" class="hidden">
+    <h2>回答一覧</h2>
     <p id="maruStatusResult"></p>
     <table id="resultTable">
-     <thead id="formHeader">
-        <!-- 結果のヘッダーはJSで生成 -->
-      </thead>
-      <tbody id="formBodyResult">
-        <!-- 結果の行はJSで生成 -->
-      </tbody>
+      <thead><tr id="resultHeaderRow"></tr></thead>
+      <tbody></tbody>
     </table>
   </div>
 
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
+      authDomain: "unsoleinight-schedule.firebaseapp.com",
+      projectId: "unsoleinight-schedule",
+      storageBucket: "unsoleinight-schedule.firebasestorage.app",
+      messagingSenderId: "1040333692698",
+      appId: "1:1040333692698:web:fb0e4f481dff8167f756a3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.users = {};
+    window.currentUser = "";
+    const maruUsers = {};
+
+    function sha256(str) {
+      const buffer = new TextEncoder().encode(str);
+      return crypto.subtle.digest("SHA-256", buffer).then(buf => {
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+      });
+    }
+
+    async function fetchCandidateDates() {
+      const docRef = doc(db, "settings", "eventDates");
+      const docSnap = await getDoc(docRef);
+      return docSnap.exists() ? docSnap.data().list || [] : [];
+    }
+
+    async function renderForm() {
+      const dates = await fetchCandidateDates();
+      const tbody = document.getElementById("form-body");
+      tbody.innerHTML = "";
+
+      dates.forEach(date => {
+        const row = document.createElement("tr");
+        const dateCell = document.createElement("td");
+        dateCell.textContent = `日付 (${date})`;
+        row.appendChild(dateCell);
+
+        ["〇", "△", "×"].forEach(choice => {
+          const td = document.createElement("td");
+          const input = document.createElement("input");
+          input.type = "radio";
+          input.name = `response-${date}`;
+          input.value = choice;
+          td.appendChild(input);
+          row.appendChild(td);
+        });
+
+        tbody.appendChild(row);
+      });
+    }
+
+    async function loadPreviousAnswers() {
+      const dates = await fetchCandidateDates();
+      const userData = window.users[window.currentUser] || {};
+      const answers = userData.answers || {};
+      const comment = userData.comment || "";
+
+      dates.forEach(date => {
+        const selected = answers[date];
+        if (selected) {
+          const el = document.querySelector(`input[name="response-${date}"][value="${selected}"]`);
+          if (el) el.checked = true;
+        }
+      });
+      document.getElementById("comment").value = comment;
+    }
+
+    async function showAllResults() {
+      const dates = await fetchCandidateDates();
+      const thead = document.getElementById("formHeader");
+      thead.innerHTML = "";
+      const headerRow = document.createElement("tr");
+
+      const thUser = document.createElement("th");
+      thUser.textContent = "ユーザーID";
+      headerRow.appendChild(thUser);
+
+      dates.forEach(date => {
+        const th = document.createElement("th");
+        th.textContent = date;
+        headerRow.appendChild(th);
+      });
+
+      const thComment = document.createElement("th");
+      thComment.textContent = "コメント";
+      headerRow.appendChild(thComment);
+
+      thead.appendChild(headerRow);
+
+      const tbody = document.getElementById("resultTable").querySelector("tbody");
+      const status = document.getElementById("maruStatusResult");
+      tbody.innerHTML = "";
+      if (status) status.textContent = "";
+
+      const configSnap = await getDoc(doc(db, "settings", "capacity"));
+      let MAX = configSnap.exists() ? configSnap.data().maxCapacity : 3;
+
+      const snapshot = await getDocs(collection(db, "users"));
+      const docsArray = snapshot.docs.map(d => ({ id: d.id, data: d.data() }));
+
+      docsArray.sort((a, b) => (a.data.updatedAt?.toMillis() || 0) - (b.data.updatedAt?.toMillis() || 0));
+      window.users = {};
+      dates.forEach(date => { maruUsers[date] = []; });
+
+      docsArray.forEach(({ id, data }) => {
+        window.users[id] = data;
+        const a = data.answers || {};
+        dates.forEach(date => {
+          if (a[date] === "〇") maruUsers[date].push(id);
+        });
+      });
+
+      const highlighted = {};
+      dates.forEach(date => {
+        highlighted[date] = maruUsers[date].length >= MAX ? maruUsers[date].slice(0, MAX) : [];
+      });
+
+      if (Object.values(maruUsers).some(arr => arr.length >= MAX)) {
+        if (status) status.textContent = "この会はすでに満席となりました。以降は観戦/リザーバー枠での参加を募集いたします。";
+      }
+
+      docsArray.forEach(({ id, data }) => {
+        const a = data.answers || {};
+        const c = data.comment || "";
+        if (!Object.keys(a).length && !c) return;
+        const row = document.createElement("tr");
+        const idCell = document.createElement("td");
+        idCell.textContent = id;
+        row.appendChild(idCell);
+
+        dates.forEach(date => {
+          const cell = document.createElement("td");
+          const answer = a[date] || "";
+          if (highlighted[date]?.includes(id)) cell.classList.add("highlight");
+          cell.textContent = answer;
+          row.appendChild(cell);
+        });
+
+        const commentCell = document.createElement("td");
+        commentCell.textContent = c;
+        row.appendChild(commentCell);
+        tbody.appendChild(row);
+      });
+    }
+
+    window.login = async function () {
+      const id = document.getElementById("userId").value.trim();
+      const pass = document.getElementById("password").value;
+      if (!id || !pass) {
+        document.getElementById("loginError").textContent = "IDとパスワードを入力してください。";
+        return;
+      }
+
+      const docSnap = await getDoc(doc(db, "users", id));
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const hashedInput = await sha256(pass);
+        if (data.password === hashedInput) {
+          window.currentUser = id;
+          window.users[id] = data;
+          document.getElementById("loginSection").classList.add("hidden");
+          document.getElementById("formSection").classList.remove("hidden");
+          document.getElementById("resultSection").classList.remove("hidden");
+          document.getElementById("welcomeMsg").textContent = `${id} さんとしてログイン中`;
+          await renderForm();
+          loadPreviousAnswers();
+          await showAllResults();
+          document.getElementById("loginError").textContent = "";
+          document.getElementById("submitMessage").textContent = "";
+        } else {
+          document.getElementById("loginError").textContent = "パスワードが違います。";
+        }
+      } else {
+        document.getElementById("loginError").textContent = "IDが存在しません。";
+      }
+    };
+
+    window.register = async function () {
+      const id = document.getElementById("newUserId").value.trim();
+      const pass = document.getElementById("newPassword").value;
+      if (!id || !pass) {
+        document.getElementById("registerMessage").textContent = "IDとパスワードを入力してください。";
+        return;
+      }
+      if (/[<>]/.test(id)) {
+        document.getElementById("registerMessage").textContent = "IDに < や > を含めないでください。";
+        return;
+      }
+      const docSnap = await getDoc(doc(db, "users", id));
+      if (docSnap.exists()) {
+        document.getElementById("registerMessage").textContent = "このIDはすでに使われています。";
+      } else {
+        const hashedPass = await sha256(pass);
+        await setDoc(doc(db, "users", id), {
+          password: hashedPass,
+          answers: {},
+          comment: ""
+        });
+        document.getElementById("registerMessage").style.color = "green";
+        document.getElementById("registerMessage").textContent = "登録成功！ログイン画面に戻ってください。";
+      }
+    };
+
+    window.showRegister = () => {
+      document.getElementById("loginSection").classList.add("hidden");
+      document.getElementById("registerSection").classList.remove("hidden");
+    };
+    window.backToLogin = () => {
+      document.getElementById("registerSection").classList.add("hidden");
+      document.getElementById("loginSection").classList.remove("hidden");
+    };
+
+    document.getElementById("scheduleForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!window.currentUser) return alert("ログインしてください。");
+
+      const answerInputs = document.querySelectorAll('input[type="radio"]:checked');
+      const answers = {};
+      answerInputs.forEach(input => {
+        const date = input.name.replace("response-", "");
+        answers[date] = input.value;
+      });
+
+      const comment = document.getElementById("comment").value;
+      const prevAnswers = window.users[window.currentUser]?.answers || {};
+      const prevComment = window.users[window.currentUser]?.comment || "";
+
+      const userRef = doc(db, "users", window.currentUser);
+      const dates = await fetchCandidateDates();
+      const logPromises = [];
+
+      dates.forEach(date => {
+        const oldVal = prevAnswers[date] || "";
+        const newVal = answers[date] || "";
+        if (oldVal !== newVal) {
+          logPromises.push(addDoc(collection(db, "logs"), {
+            userId: window.currentUser,
+            date,
+            from: oldVal,
+            to: newVal,
+            timestamp: serverTimestamp()
+          }));
+        }
+      });
+      if (comment !== prevComment) {
+        logPromises.push(addDoc(collection(db, "logs"), {
+          userId: window.currentUser,
+          field: "comment",
+          from: prevComment,
+          to: comment,
+          timestamp: serverTimestamp()
+        }));
+      }
+      await Promise.all(logPromises);
+
+      await setDoc(userRef, {
+        ...window.users[window.currentUser],
+        answers,
+        comment,
+        updatedAt: serverTimestamp()
+      });
+
+      await showAllResults();
+      document.getElementById("submitMessage").textContent = "送信しました！";
+    });
+  </script>
 </body>
 </html>
