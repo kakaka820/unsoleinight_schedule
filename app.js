@@ -395,18 +395,26 @@ answerInputs.forEach(input => {
 
 const userRef = doc(db, "users", window.currentUser);
 const prevDoc = await getDoc(userRef);
-
 const dates = await fetchCandidateDates();
-logPromises.push(
-  addDoc(collection(db, "logs"), {
-    uid: window.currentUser,
-    user: window.currentUser,
-    date,
-    from: oldVal,
-    to: newVal,
-    timestamp: new Date()
-  })
-);
+const logPromises = [];
+
+dates.forEach(date => {
+  const oldVal = prevAnswers[date] || "";
+  const newVal = answers[date] || "";
+
+  if (oldVal !== newVal) {
+    logPromises.push(
+      addDoc(collection(db, "logs"), {
+        uid: window.currentUser,
+        user: window.currentUser,
+        date,
+        from: oldVal,
+        to: newVal,
+        timestamp: new Date()
+      })
+    );
+  }
+});
 
 
   // 🔄 タイムスタンプ更新
