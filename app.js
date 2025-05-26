@@ -351,43 +351,8 @@ answerInputs.forEach(input => {
     comment
   };
 
-  // 🔴 ログ記録処理（変更があった場合のみ）
 
-const userRef = doc(db, "users", window.currentUser);
-const prevDoc = await getDoc(userRef);
-
-const dates = await fetchCandidateDates();
-logPromises.push(
-  addDoc(collection(db, "logs"), {
-    uid: window.currentUser,
-    user: window.currentUser,
-    date,
-    from: oldVal,
-    to: newVal,
-    timestamp: new Date()
-  })
-);
-
-
-  // 🔄 タイムスタンプ更新
-  if (JSON.stringify(answers) !== JSON.stringify(prevAnswers)) {
-    updateData.updatedAt = serverTimestamp();
-  }
-
-  await Promise.all([
-    setDoc(doc(db, "users", window.currentUser), updateData, { merge: true }),
-    ...logPromises
-  ]);
-
-  window.users[window.currentUser] = { ...window.users[window.currentUser], ...updateData };
-
-  document.getElementById("submitMessage").textContent = "回答を保存しました！";
-  await showAllResults();
-
-});
-
-
-function populateResults(dates, data) {
+  function populateResults(dates, data) {
   const resultTable = document.getElementById("resultTable");
   const headerRow = document.getElementById("resultHeaderRow");
   headerRow.innerHTML = ""; // クリア
@@ -426,3 +391,37 @@ function populateResults(dates, data) {
 
 
 
+  // 🔴 ログ記録処理（変更があった場合のみ）
+
+const userRef = doc(db, "users", window.currentUser);
+const prevDoc = await getDoc(userRef);
+
+const dates = await fetchCandidateDates();
+logPromises.push(
+  addDoc(collection(db, "logs"), {
+    uid: window.currentUser,
+    user: window.currentUser,
+    date,
+    from: oldVal,
+    to: newVal,
+    timestamp: new Date()
+  })
+);
+
+
+  // 🔄 タイムスタンプ更新
+  if (JSON.stringify(answers) !== JSON.stringify(prevAnswers)) {
+    updateData.updatedAt = serverTimestamp();
+  }
+
+  await Promise.all([
+    setDoc(doc(db, "users", window.currentUser), updateData, { merge: true }),
+    ...logPromises
+  ]);
+
+  window.users[window.currentUser] = { ...window.users[window.currentUser], ...updateData };
+
+  document.getElementById("submitMessage").textContent = "回答を保存しました！";
+  await showAllResults();
+
+});
