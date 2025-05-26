@@ -480,7 +480,7 @@ msg.style.color = "green";
     tr.appendChild(toTd);
 
 const dateTd = document.createElement("td");
-dateTd.textContent = log.field || "-"; // アンケートの「日付」文字列
+dateTd.textContent = log.date || "-"; // アンケートの「日付」文字列
 tr.appendChild(dateTd);
 
 const timeTd = document.createElement("td");
