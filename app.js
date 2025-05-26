@@ -313,36 +313,6 @@ window.login = async function () {
   }
 };
 
-// 登録機能
-window.register = async function () {
-  const id = document.getElementById("newUserId").value.trim();
-  const pass = document.getElementById("newPassword").value;
-
-  if (!id || !pass) {
-    document.getElementById("registerMessage").textContent = "IDとパスワードを入力してください。";
-    return;
-  }
-
-  if (/[<>]/.test(id)) {
-    document.getElementById("registerMessage").textContent = "IDに < や > を含めないでください。";
-    return;
-  }
-
-  const docSnap = await getDoc(doc(db, "users", id));
-  if (docSnap.exists()) {
-    document.getElementById("registerMessage").textContent = "このIDはすでに使われています。";
-  } else {
-    const hashedPass = sha256(pass);
-    await setDoc(doc(db, "users", id), {
-      password: hashedPass,
-      answers: {},
-      comment: ""
-    });
-    document.getElementById("registerMessage").style.color = "green";
-    document.getElementById("registerMessage").textContent = "登録成功！ログイン画面に戻ってください。";
-  }
-};
-
 // 表示切り替え
 window.showRegister = () => {
   document.getElementById("loginSection").classList.add("hidden");
