@@ -69,22 +69,23 @@ renderForm();
 
 
 // 回答の読み込み
-function loadPreviousAnswers() {
+async function loadPreviousAnswers() {
   const userData = window.users[window.currentUser] || {};
   const answers = userData.answers || {};
   const comment = userData.comment || "";
 
-  ["date1", "date2", "date3"].forEach(name => {
-    const selected = answers[name];
+  const dates = await fetchCandidateDates();
+
+  dates.forEach(date => {
+    const selected = answers[date];
     if (selected) {
-      const el = document.querySelector(`input[name="${name}"][value="${selected}"]`);
+      const el = document.querySelector(`input[name="response-${date}"][value="${selected}"]`);
       if (el) el.checked = true;
     }
   });
 
   document.getElementById("comment").value = comment;
 }
-
 // 回答の集計と表示
 async function showAllResults() {
   const tbody = document.getElementById("resultTable").querySelector("tbody");
@@ -254,10 +255,13 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
     return;
   }
 
-  const answers = {};
-  ["date1", "date2", "date3"].forEach(date => {
-    answers[date] = document.querySelector(`input[name="${date}"]:checked`)?.value || "";
-  });
+  const answerInputs = document.querySelectorAll('input[type="radio"]:checked');
+const answers = {};
+answerInputs.forEach(input => {
+  const date = input.name.replace("response-", "");  // name 属性から日付を抽出
+  answers[date] = input.value;
+});
+
 
   const comment = document.getElementById("comment").value;
   const prevAnswers = window.users[window.currentUser]?.answers || {};
