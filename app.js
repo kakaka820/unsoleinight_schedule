@@ -21,6 +21,57 @@ const db = getFirestore(app);
 window.users = {};
 window.currentUser = "";
 
+
+//firebaseから日付を読み取る
+import { getDoc, doc } from "firebase/firestore";
+import { db } from "./firebase"; // ← あなたのfirebase設定に応じて
+
+async function fetchCandidateDates() {
+  const docRef = doc(db, "candidates", "list");
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return docSnap.data().dates; // 配列 ["2025-06-01", "2025-06-02"]
+  } else {
+    console.log("No such document!");
+    return [];
+  }
+}
+
+
+//取得した日付でフォームの行を動的に生成
+async function renderForm() {
+  const dates = await fetchCandidateDates();
+  const tbody = document.getElementById("form-body"); // tbodyに候補日を入れる想定
+
+  dates.forEach((date) => {
+    const row = document.createElement("tr");
+
+    // 日付のセル
+    const dateCell = document.createElement("td");
+    dateCell.textContent = date;
+    row.appendChild(dateCell);
+
+    // 選択肢（〇△×）のラジオボタン
+    ["〇", "△", "×"].forEach((choice) => {
+      const td = document.createElement("td");
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = `response-${date}`; // 同じ日付でグループ化
+      input.value = choice;
+      td.appendChild(input);
+      row.appendChild(td);
+    });
+
+    tbody.appendChild(row);
+  });
+}
+
+renderForm();
+
+
+
+
+
 // 回答の読み込み
 function loadPreviousAnswers() {
   const userData = window.users[window.currentUser] || {};
