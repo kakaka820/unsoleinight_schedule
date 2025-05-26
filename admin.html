@@ -1,6 +1,7 @@
 管理画面　定員変更と日付の追加と削除まで対応（未連携）
 ログ実装はまだ。ログ実装（絞り込み機能含む、最新100件の保存）実装済、ただし表示されるのがIDと
 日付の追加を削除の同期を行う予定  
+水曜日にお父さん来たら管理者権限の付与も進める。
 ユーザー管理はUIDも書くといいな。
 
 <!DOCTYPE html>
@@ -391,55 +392,50 @@
       }
     }
 
-    function renderLogs(logs) {
-      const tbody = document.querySelector("#logTable tbody");
-      tbody.innerHTML = "";
+  function renderLogs(logs) {
+  const tbody = document.querySelector("#logTable tbody");
+  tbody.innerHTML = "";
 
-      if (logs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#666;">ログがありません。</td></tr>`;
-        return;
-      }
+  if (logs.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#666;">ログがありません。</td></tr>`;
+    return;
+  }
 
-      for (const log of logs) {
-        const tr = document.createElement("tr");
+  for (const log of logs) {
+    const tr = document.createElement("tr");
 
-        const userTd = document.createElement("td");
-        userTd.textContent = log.user || "-";
+    const userTd = document.createElement("td");
+    userTd.textContent = log.user || "-";
+    tr.appendChild(userTd);
 
-       // UID列
-const uidTd = document.createElement("td");
-uidTd.textContent = log.uid || "-";
-row.appendChild(uidTd);
+    const uidTd = document.createElement("td");
+    uidTd.textContent = log.uid || "-";
+    tr.appendChild(uidTd);
 
-// 元の状態（from）
-const fromTd = document.createElement("td");
-fromTd.textContent = log.from || "-";
-row.appendChild(fromTd);
+    const fromTd = document.createElement("td");
+    fromTd.textContent = log.from || "-";
+    tr.appendChild(fromTd);
 
-// 更新した状態（to）
-const toTd = document.createElement("td");
-toTd.textContent = log.to || "-";
-row.appendChild(toTd);
+    const toTd = document.createElement("td");
+    toTd.textContent = log.to || "-";
+    tr.appendChild(toTd);
 
+    const dateTd = document.createElement("td");
+    dateTd.textContent = log.timestamp && log.timestamp.toDate
+      ? log.timestamp.toDate().toLocaleDateString()
+      : "-";
+    tr.appendChild(dateTd);
 
-        const dateTd = document.createElement("td");
-        dateTd.textContent = log.timestamp && log.timestamp.toDate
-          ? log.timestamp.toDate().toLocaleDateString()
-          : "-";
+    const timeTd = document.createElement("td");
+    timeTd.textContent = log.timestamp && log.timestamp.toDate
+      ? log.timestamp.toDate().toLocaleTimeString()
+      : "-";
+    tr.appendChild(timeTd);
 
-        const timeTd = document.createElement("td");
-        timeTd.textContent = log.timestamp && log.timestamp.toDate
-          ? log.timestamp.toDate().toLocaleTimeString()
-          : "-";
+    tbody.appendChild(tr);
+  }
+}
 
-        tr.appendChild(userTd);
-        tr.appendChild(actionTd);
-        tr.appendChild(dateTd);
-        tr.appendChild(timeTd);
-
-        tbody.appendChild(tr);
-      }
-    }
 
     // --- フィルタリング ---
 
