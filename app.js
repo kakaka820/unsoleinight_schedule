@@ -1,9 +1,3 @@
-だいたいすべてを動的対応できました。
-
-全回答一覧のところの表記がずっとなおらんからそこを直す。失敗したらここまで戻ってくる
-
-
-
 // Firebase モジュールのインポート
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
@@ -39,13 +33,19 @@ async function fetchCandidateDates() {
 
 async function renderForm() {
   const dates = await fetchCandidateDates();
+
+
+
+
+  // フォーム本体（tbody）生成
   const tbody = document.getElementById("form-body");
+  tbody.innerHTML = ""; // 念のためクリア
 
   dates.forEach((date) => {
     const row = document.createElement("tr");
 
     const dateCell = document.createElement("td");
-    dateCell.textContent = date;
+   dateCell.textContent = `日付 (${date})`;  // またはただの date にすることも可能
     row.appendChild(dateCell);
 
     ["〇", "△", "×"].forEach((choice) => {
@@ -65,11 +65,10 @@ async function renderForm() {
 renderForm();
 
 async function loadPreviousAnswers() {
+  const dates = await fetchCandidateDates();
   const userData = window.users[window.currentUser] || {};
   const answers = userData.answers || {};
   const comment = userData.comment || "";
-  const dates = await fetchCandidateDates();
-
   dates.forEach(date => {
     const selected = answers[date];
     if (selected) {
@@ -82,6 +81,30 @@ async function loadPreviousAnswers() {
 }
 
 async function showAllResults() {
+async function showAllResults() {
+  const dates = await fetchCandidateDates(); // ✅ 先に定義
+  // ヘッダー生成
+  const thead = document.getElementById("formHeader");
+  thead.innerHTML = ""; // クリア
+  const headerRow = document.createElement("tr");
+
+  const thUser = document.createElement("th");
+  thUser.textContent = "ユーザーID";
+  headerRow.appendChild(thUser);
+
+  dates.forEach((date, index) => {
+    const th = document.createElement("th");
+    th.textContent = date;
+    headerRow.appendChild(th);
+  });
+
+  const thComment = document.createElement("th");
+  thComment.textContent = "コメント";
+  headerRow.appendChild(thComment);
+
+  thead.appendChild(headerRow);
+
+
   const tbody = document.getElementById("resultTable").querySelector("tbody");
   const status = document.getElementById("maruStatusResult");
   tbody.innerHTML = "";
@@ -137,9 +160,7 @@ async function showAllResults() {
       const c = data.comment || "";
       const hasAnyAnswer = dates.some(date => a[date]);
       if (!hasAnyAnswer && !c) return;
-
       const row = document.createElement("tr");
-
       const idCell = document.createElement("td");
       idCell.textContent = id;
       row.appendChild(idCell);
@@ -399,27 +420,52 @@ answerInputs.forEach(input => {
 
   // 🔴 ログ記録処理（変更があった場合のみ）
 
-const userRef = doc(db, "users", window.currentUser);
-const prevDoc = await getDoc(userRef);
-const dates = await fetchCandidateDates();
-const logPromises = [];
+  const userRef = doc(db, "users", window.currentUser);
+  const prevDoc = await getDoc(userRef);
+  const dates = await fetchCandidateDates();
+  const logPromises = [];
 
-dates.forEach(date => {
-  const oldVal = prevAnswers[date] || "";
-  const newVal = answers[date] || "";
+  dates.forEach(date => {
+    const oldVal = prevAnswers[date] || "";
+    const newVal = answers[date] || "";
 
-  if (oldVal !== newVal) {
-    logPromises.push(
-      addDoc(collection(db, "logs"), {
-        uid: window.currentUser,
-        user: window.currentUser,
+    if (oldVal !== newVal) {
+      logPromises.push(addDoc(collection(db, "logs"), {
+        userId: window.currentUser,
         date,
         from: oldVal,
         to: newVal,
-        timestamp: new Date()
-      })
-    );
+        timestamp: serverTimestamp()
+      }));
+    }
+  });
+
+  // コメントの変更もログに記録
+  const prevComment = window.users[window.currentUser]?.comment || "";
+  if (comment !== prevComment) {
+    logPromises.push(addDoc(collection(db, "logs"), {
+      userId: window.currentUser,
+      field: "comment",
+      from: prevComment,
+      to: comment,
+      timestamp: serverTimestamp()
+    }));
   }
+
+  // ログ書き込み待ち
+  await Promise.all(logPromises);
+
+  // Firestoreに回答データを保存
+  await setDoc(userRef, {
+    ...window.users[window.currentUser],
+    answers,
+    comment,
+    updatedAt: serverTimestamp()
+  });
+
+  // データを再取得して反映
+  await showAllResults();
+  document.getElementById("submitMessage").textContent = "送信しました！";
 });
 
 
