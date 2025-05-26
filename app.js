@@ -280,7 +280,6 @@ answerInputs.forEach(input => {
 
 const userRef = doc(db, "users", window.currentUser);
 const prevDoc = await getDoc(userRef);
-const prevAnswers = prevDoc.exists() ? prevDoc.data().answers || {} : {};
 
 const dates = await fetchCandidateDates();
 
