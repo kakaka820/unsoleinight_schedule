@@ -1,4 +1,3 @@
-
 // Firebase初期化
 const firebaseConfig = {
   apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
@@ -238,7 +237,7 @@ async function displayLogs(filterUser = "", filterDate = "") {
 
     // ユーザー
     const userTd = document.createElement("td");
-    userTd.textContent = log.userId;
+    userTd.textContent = log.user;
     tr.appendChild(userTd);
 
     // UID
@@ -256,27 +255,29 @@ async function displayLogs(filterUser = "", filterDate = "") {
     toTd.textContent = JSON.stringify(log.to);
     tr.appendChild(toTd);
 
-    // 日付（stringsで保存されているdateフィールドをそのまま表示）
-const dateTd = document.createElement("td");
-if (log.date) {
-  dateTd.textContent = log.date;
-} else {
-  dateTd.textContent = "-";
-}
-tr.appendChild(dateTd);
+    // 日付（YYYY/MM/DD）
+    const dateTd = document.createElement("td");
+    if (log.timestamp) {
+      const dt = log.timestamp;
+      dateTd.textContent = dt.getFullYear() + "/" + String(dt.getMonth() + 1).padStart(2, "0") + "/" + String(dt.getDate()).padStart(2, "0");
+    } else {
+      dateTd.textContent = "-";
+    }
+    tr.appendChild(dateTd);
 
-// 時刻（timestampフィールドの値をDateオブジェクトに変換して表示）
-const timeTd = document.createElement("td");
-if (log.timestamp) {
-  // FirestoreのTimestampをDateに変換
-  const dt = log.timestamp.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
-  timeTd.textContent = String(dt.getHours()).padStart(2, "0") + ":" +
-                       String(dt.getMinutes()).padStart(2, "0") + ":" +
-                       String(dt.getSeconds()).padStart(2, "0");
-} else {
-  timeTd.textContent = "-";
+    // 時刻（HH:MM:SS）
+    const timeTd = document.createElement("td");
+    if (log.timestamp) {
+      const dt = log.timestamp;
+      timeTd.textContent = String(dt.getHours()).padStart(2, "0") + ":" + String(dt.getMinutes()).padStart(2, "0") + ":" + String(dt.getSeconds()).padStart(2, "0");
+    } else {
+      timeTd.textContent = "-";
+    }
+    tr.appendChild(timeTd);
+
+    tbody.appendChild(tr);
+  });
 }
-tr.appendChild(timeTd);
 
 // --- ログイン処理 ---
 
