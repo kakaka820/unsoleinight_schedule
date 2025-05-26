@@ -1,4 +1,9 @@
 管理画面　定員変更と日付の追加と削除まで対応（未連携）
+ログ実装はまだ。ログ実装（絞り込み機能含む、最新100件の保存）実装済、ただし表示されるのがIDと
+日付の追加を削除の同期を行う予定  
+ユーザー管理はUID、元の状態と更新後表記まで対応。
+
+
 
 <!DOCTYPE html>
 <html lang="ja">
@@ -316,16 +321,17 @@
 
         const delBtn = document.createElement("button");
         delBtn.textContent = "削除";
-        delBtn.onclick = () => {
-          if (confirm(`日程「${d.date}」を削除しますか？`)) {
-            await addLog({ 
-  user: userId,
-  uid: "-",              // 管理者なので任意の固定値
-  from: "-", 
-  to: `日程追加: ${dateStr}`
-});
-          }
-        };
+        delBtn.onclick = async () => {
+  if (confirm(`日程「${d.date}」を削除しますか？`)) {
+    await addLog({
+      user: userId,
+      uid: "-",
+      from: "-",
+      to: `日程追加: ${d.date}`
+    });
+  }
+};
+
         li.appendChild(delBtn);
         list.appendChild(li);
       }
