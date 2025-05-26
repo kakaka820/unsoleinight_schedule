@@ -68,8 +68,6 @@ async function loadPreviousAnswers() {
   const userData = window.users[window.currentUser] || {};
   const answers = userData.answers || {};
   const comment = userData.comment || "";
-  const dates = await fetchCandidateDates();
-
   dates.forEach(date => {
     const selected = answers[date];
     if (selected) {
@@ -82,7 +80,8 @@ async function loadPreviousAnswers() {
 }
 
 async function showAllResults() {
-
+async function showAllResults() {
+  const dates = await fetchCandidateDates(); // ✅ 先に定義
   // ヘッダー生成
   const thead = document.getElementById("formHeader");
   thead.innerHTML = ""; // クリア
