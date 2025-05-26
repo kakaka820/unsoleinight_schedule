@@ -38,7 +38,7 @@ async function renderForm() {
   dates.forEach(date => {
     const row = document.createElement("tr");
     const dateCell = document.createElement("td");
-    dateCell.textContent = `日付 (${date})`;
+    dateCell.textContent = `${date}`;
     row.appendChild(dateCell);
 
     ["〇", "△", "×"].forEach(choice => {
