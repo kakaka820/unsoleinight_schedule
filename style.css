@@ -81,7 +81,6 @@ textarea {
 }
 @media (max-width: 600px) {
   table, thead, tbody, th, td, tr {
-    display: block;
   }
  td, th {
     text-align: left;
