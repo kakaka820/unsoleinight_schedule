@@ -41,6 +41,9 @@ async function renderForm() {
     const row = document.createElement("tr");
     const dateCell = document.createElement("td");
     dateCell.textContent = `${date}`;
+    if (highlighted[date]?.length > 0) {
+      dateCell.classList.add("highlight");
+    }
     row.appendChild(dateCell);
 
     ["〇", "×", "観戦"].forEach(choice => {
