@@ -276,6 +276,7 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
     if (oldVal !== newVal) {
       logPromises.push(addDoc(collection(db, "logs"), {
         userId: window.currentUser,
+        uid: user.uid,
         date,
         from: oldVal,
         to: newVal,
