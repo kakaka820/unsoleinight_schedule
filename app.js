@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
@@ -12,6 +13,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
+
 
 window.users = {};
 window.currentUser = "";
@@ -189,6 +192,17 @@ window.login = async function () {
       document.getElementById("formSection").classList.remove("hidden");
       document.getElementById("resultSection").classList.remove("hidden");
       document.getElementById("welcomeMsg").textContent = `${id} さんとしてログイン中`;
+// 匿名認証でログインして uid を取得し、users/{id} に保存
+try {
+  const userCredential = await signInAnonymously(auth);
+  const uid = userCredential.user.uid;
+  const userRef = doc(db, "users", id);
+  await setDoc(userRef, { uid }, { merge: true });  // uidだけを追記保存
+  console.log("UID保存成功:", uid);
+} catch (error) {
+  console.error("UID保存失敗:", error);
+}
+     
       await renderForm();
       await showAllResults();
       await loadPreviousAnswers();
