@@ -209,7 +209,8 @@ UID以外の問題は解決済。UIDに関しては、今はUIDがそもそもfi
       </div>
       <div>
         <label for="dateFilter">日付で絞り込み：</label>
-        <input type="date" id="dateFilter" />
+       <select id="dateFilter">
+  <option value="">-- 全て --</option>
       </div>
       <div>
         <button id="applyFilterBtn">絞り込み</button>
@@ -506,6 +507,30 @@ tr.appendChild(timeTd);
 
     // --- フィルタリング ---
 
+
+    async function displayDateOptions() { //firebaseの日程を使って <select> に反映
+  const select = document.getElementById("dateFilter");
+  select.innerHTML = `<option value="">-- 全て --</option>`;
+
+  try {
+    const doc = await db.collection("settings").doc("eventDates").get();
+    if (doc.exists) {
+      const data = doc.data();
+      const dates = data.list || [];
+      dates.forEach(date => {
+        const option = document.createElement("option");
+        option.value = date;
+        option.textContent = date;
+        select.appendChild(option);
+      });
+    }
+  } catch (e) {
+    console.error("日程フィルターの取得失敗:", e);
+  }
+}
+
+
+    
     async function applyFilter() {
       const userFilter = document.getElementById("userFilter").value.trim().toLowerCase();
       const dateFilterVal = document.getElementById("dateFilter").value;
@@ -514,13 +539,9 @@ tr.appendChild(timeTd);
       if (userFilter) {
         logs = logs.filter(log => (log.userId || "").toLowerCase().includes(userFilter));
       }
-      if (dateFilterVal) {
-        logs = logs.filter(log => {
-          if (!log.timestamp || !log.timestamp.toDate) return false;
-         const logDate = log.field;
-return logDate === dateFilterVal;
-        });
-      }
+     if (dateFilterVal) {
+    logs = logs.filter(log => log.date === dateFilterVal);
+  }
       renderLogs(logs);
     }
 
@@ -529,6 +550,7 @@ return logDate === dateFilterVal;
       document.getElementById("dateFilter").value = "";
       loadLogs();
     }
+
 
     // --- ログイン処理 ---
    document.getElementById("loginBtn").addEventListener("click", async () => {
@@ -559,6 +581,7 @@ return logDate === dateFilterVal;
     async function initializeAdmin() {
       await displayMaxCapacity();
       await displayDates();
+      await displayDateOptions();
       await loadLogs();
     }
 
