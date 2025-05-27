@@ -525,12 +525,6 @@ async function populateDateFilterOptions() {
   }
 }
 
-    const selectedOptions = Array.from(document.getElementById("dateFilter").selectedOptions).map(opt => opt.value);
-if (selectedOptions.length > 0) {
-  logs = logs.filter(log => selectedOptions.includes(log.date));
-}
-
-
     async function applyFilter() {
       const userFilter = document.getElementById("userFilter").value.trim().toLowerCase();
        const dateFilter = document.getElementById("dateFilter");
