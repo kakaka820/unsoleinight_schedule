@@ -3,6 +3,7 @@ body {
   background-color: #f0f8ff;
   padding: 20px;
 }
+
 .container {
   max-width: 800px;
   margin: auto;
@@ -13,22 +14,25 @@ body {
   margin-bottom: 30px;
   overflow-x: auto;
 }
+
 .container input {
   width: 100%;
   max-width: 300px;
-  margin: 0 auto 8px auto; /* ← 下に8pxの余白 */
+  margin: 0 auto 8px auto; /* 下に8pxの余白 */
   padding: 10px;
   font-size: 16px;
   box-sizing: border-box;
 }
-#registerSection input{
+
+#registerSection input {
   width: 100%;
   max-width: 300px;
-  margin: 0 auto 8px auto; /* ← 下に16pxの余白 */
+  margin: 0 auto 8px auto; /* 下に8pxの余白 */
   padding: 10px;
   font-size: 16px;
   box-sizing: border-box;
 }
+
 button {
   background-color: #4caf50;
   color: white;
@@ -47,49 +51,70 @@ button:hover {
 .hidden {
   display: none;
 }
+
 table {
   border-collapse: collapse;
   width: 100%;
   margin-top: 1em;
   font-size: 14px;
 }
+
 th, td {
   border: 1px solid #ccc;
   padding: 0.6em;
   text-align: center;
 }
+
 th {
-  background-color:  #e0f0ff;
+  background-color: #e0f0ff;
   font-weight: bold;
 }
+
 textarea {
   width: 100%;
   height: 60px;
+  margin-bottom: 16px; /* ←★ コメント欄の下に余白を追加 */
 }
+
 .highlight {
   background-color: #ffcccc;
 }
+
 #submitMessage {
   color: green;
 }
-#loginError, #registerMessage {
+
+#loginError,
+#registerMessage {
   color: red;
 }
+
 .fullMsg {
   color: red;
   font-weight: bold;
 }
+
 @media (max-width: 600px) {
-  table, thead, tbody, th, td, tr {
+  table,
+  thead,
+  tbody,
+  th,
+  td,
+  tr {
+    /* スマホ対応で追加したい内容があれば後で追加 */
   }
- td, th {
+
+  td,
+  th {
     text-align: left;
     padding: 0.8em;
   }
-  
-#resultSection {
-  overflow-x: auto;
-}
-#resultTable {
-  min-width: 600px;
+
+  #resultSection {
+    overflow-x: auto;
+  }
+
+  #resultTable {
+    min-width: 600px;
+  }
 }
