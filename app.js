@@ -49,6 +49,11 @@ async function renderForm() {
       input.type = "radio";
       input.name = `response-${date}`;
       input.value = choice;
+      
+  // 満員の場合、背景色を変える（例：赤）
+  if (highlighted[date]?.length > 0) {
+    td.classList.add("highlight"); // CSS に合わせてクラスを追加
+  }
       td.appendChild(input);
       row.appendChild(td);
     });
