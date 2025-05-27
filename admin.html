@@ -515,12 +515,8 @@ tr.appendChild(timeTd);
         logs = logs.filter(log => (log.userId || "").toLowerCase().includes(userFilter));
       }
       if (dateFilterVal) {
-        logs = logs.filter(log => {
-          if (!log.timestamp || !log.timestamp.toDate) return false;
-         const logDate = log.list;
-return logDate === dateFilterVal;
-        });
-      }
+    logs = logs.filter(log => log.date === dateFilterVal);
+  }
       renderLogs(logs);
     }
 
