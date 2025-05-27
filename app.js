@@ -52,6 +52,7 @@ async function renderForm() {
       
   // 満員の場合、背景色を変える（例：赤）
   if (highlighted[date]?.length > 0) {
+    console.log(`Highlighting ${date}:`, highlighted[date]);
     td.classList.add("highlight");
   }
       td.appendChild(input);
