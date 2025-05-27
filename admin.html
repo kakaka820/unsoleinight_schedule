@@ -505,12 +505,35 @@ tr.appendChild(timeTd);
 
 
     // --- フィルタリング ---
+async function populateDateFilterOptions() {
+  const select = document.getElementById("dateFilter");
+  select.innerHTML = "";
+
+  try {
+    const doc = await db.collection("settings").doc("eventDates").get();
+    if (doc.exists) {
+      const dates = doc.data().list || [];
+      dates.forEach(dateStr => {
+        const option = document.createElement("option");
+        option.value = dateStr;
+        option.textContent = dateStr;
+        select.appendChild(option);
+      });
+    }
+  } catch (e) {
+    console.error("日付フィルター取得失敗:", e);
+  }
+}
+
+    const selectedOptions = Array.from(document.getElementById("dateFilter").selectedOptions).map(opt => opt.value);
+if (selectedOptions.length > 0) {
+  logs = logs.filter(log => selectedOptions.includes(log.date));
+}
+
 
     async function applyFilter() {
       const userFilter = document.getElementById("userFilter").value.trim().toLowerCase();
-      const dateFilterVal = document.getElementById("dateFilter").value;
       let logs = await fetchLogs();
-
       if (userFilter) {
         logs = logs.filter(log => (log.userId || "").toLowerCase().includes(userFilter));
       }
@@ -541,6 +564,7 @@ tr.appendChild(timeTd);
     document.getElementById("adminSection").classList.remove("hidden");
     await displayMaxCapacity();
     await displayDates();
+    await populateDateFilterOptions(); 
     const logs = await fetchLogs();
     renderLogs(logs);
   } else {
