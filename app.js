@@ -137,8 +137,12 @@ async function showAllResults() {
     dates.forEach(date => {
       const cell = document.createElement("td");
       const answer = a[date] || "";
-      if (highlighted[date]?.includes(id)) cell.classList.add("highlight");
-      cell.textContent = answer;
+      if (highlighted[date]?.includes(id)) {cell.classList.add("highlight");}
+     if (answer === "〇" && maruUsers[date].includes(id) && !highlighted[date].includes(id)) {
+  cell.textContent = "リザーバー";
+} else {
+  cell.textContent = answer;
+}
       row.appendChild(cell);
     });
 
