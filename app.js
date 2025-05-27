@@ -183,8 +183,8 @@ window.login = async function () {
       document.getElementById("formSection").classList.remove("hidden");
       document.getElementById("resultSection").classList.remove("hidden");
       document.getElementById("welcomeMsg").textContent = `${id} さんとしてログイン中`;
-      await showAllResults();
       await renderForm();
+      await showAllResults();
       await loadPreviousAnswers();
       document.getElementById("loginError").textContent = "";
       document.getElementById("submitMessage").textContent = "";
