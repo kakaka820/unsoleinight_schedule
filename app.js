@@ -41,9 +41,6 @@ async function renderForm() {
     const row = document.createElement("tr");
     const dateCell = document.createElement("td");
     dateCell.textContent = `${date}`;
-    if (highlighted[date]?.length > 0) {
-      dateCell.classList.add("highlight");
-    }
     row.appendChild(dateCell);
 
     ["〇", "×", "観戦"].forEach(choice => {
@@ -150,6 +147,20 @@ async function showAllResults() {
     row.appendChild(commentCell);
     tbody.appendChild(row);
   });
+
+// フォームの日付セルもハイライト
+const formRows = document.querySelectorAll("#form-body tr");
+formRows.forEach(row => {
+  const dateCell = row.cells[0];
+  const date = dateCell.textContent;
+  if (highlighted[date]?.length > 0) {
+    dateCell.classList.add("highlight");
+  } else {
+    dateCell.classList.remove("highlight");
+  }
+});
+
+  
 }
 
 window.login = async function () {
