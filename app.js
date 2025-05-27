@@ -16,7 +16,7 @@ const db = getFirestore(app);
 window.users = {};
 window.currentUser = "";
 const maruUsers = {};
-const highlighted = {}; // ←これをグローバルに
+const highlighted = {}; 
 
 
 function sha256(str) {
