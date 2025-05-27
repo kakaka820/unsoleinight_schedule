@@ -3,7 +3,7 @@
 進捗：HTMLとJSとCSSの分離がまだ、管理者IDがハードコーディングされたまま、管理ログがスマホだとおかしいから全部＜ぢｖ＞で囲いたい、firebaseでのログ保管量が大量になりすぎて重くなるのを阻止したい、30日とかで勝手に消えるようにしたい。管理者IDの付与まだ。
 UID以外の問題は解決済。UIDに関しては、今はUIDがそもそもfirebaseに登録されていない状態。管理画面にはUID表示テーブルは存在しているので、そして引用もできているのであとは書き込みができれば解決する状態。
 
-今後は同期、そしてテーブルが崩れないようにすること、ログ表示テーブルをスクロール対応することなど。ログの絞り込み機能のなかで日付がうまく機能してないのでそれも修正する
+今後は同期、そしてテーブルが崩れないようにすること、ログ表示テーブルをスクロール対応することなど。
 
 
 
@@ -203,26 +203,30 @@ UID以外の問題は解決済。UIDに関しては、今はUIDがそもそもfi
     <h2>変更ログ</h2>
 
     <div id="logFilter">
-     <div>
-    <label>名前で絞り込み：</label>
-    <input type="text" id="userFilter" placeholder="名前を入力" />
-  </div>
-  <div>
-    <label>対象日程で絞り込み：</label>
-    <div id="dateCheckboxes" style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 8px; border-radius: 6px;"></div>
-  </div>
-  <button id="applyFilterBtn">絞り込み適用</button>
+      <div>
+        <label for="userFilter">ユーザー名で絞り込み：</label>
+        <input type="text" id="userFilter" placeholder="ユーザー名" />
+      </div>
+      <div>
+        <label for="dateFilter">日付で絞り込み：</label>
+        <input type="date" id="dateFilter" />
+      </div>
+      <div>
+        <button id="applyFilterBtn">絞り込み</button>
+        <button id="clearFilterBtn">クリア</button>
+      </div>
+    </div>
 
     <table id="logTable">
       <thead>
-       <tr>
-        <th>名前</th>
-        <th>UID</th>
-        <th>変更前</th>
-        <th>変更後</th>
-        <th>対象日程</th>
-        <th>変更時刻</th>
-      </tr>
+        <tr>
+  <th>ユーザー</th>
+  <th>UID</th>
+  <th>元の状態</th>
+  <th>更新した状態</th>
+  <th>日付</th>
+  <th>変更時刻</th>
+</tr>
       </thead>
       <tbody></tbody>
     </table>
@@ -245,7 +249,6 @@ UID以外の問題は解決済。UIDに関しては、今はUIDがそもそもfi
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const auth = firebase.auth();
 
 let currentUserId = "";
 let currentUid = "";
@@ -502,87 +505,30 @@ tr.appendChild(timeTd);
 
 
     // --- フィルタリング ---
-　　　　　　 // 日程のチェックボックスを読み込む関数
-    async function loadDateCheckboxes() {
-      const container = document.getElementById("dateCheckboxes");
-      container.innerHTML = "読み込み中...";
 
-      try {
-        const doc = await db.collection("settings").doc("eventDates").get();
-        if (doc.exists) {
-          const dates = doc.data().list || [];
-          container.innerHTML = "";
+    async function applyFilter() {
+      const userFilter = document.getElementById("userFilter").value.trim().toLowerCase();
+      const dateFilterVal = document.getElementById("dateFilter").value;
+      let logs = await fetchLogs();
 
-          dates.forEach(date => {
-            const label = document.createElement("label");
-            label.style.display = "block";
-
-            const checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.value = date;
-            checkbox.className = "date-filter-checkbox";
-
-            label.appendChild(checkbox);
-            label.appendChild(document.createTextNode(" " + date));
-            container.appendChild(label);
-          });
-        } else {
-          container.innerHTML = "日程データが存在しません。";
-        }
-      } catch (e) {
-        console.error("日程読み込み失敗:", e);
-        container.innerHTML = "読み込みエラーが発生しました。";
+      if (userFilter) {
+        logs = logs.filter(log => (log.userId || "").toLowerCase().includes(userFilter));
       }
-    }
-
-
-    //フィルター
-   // ログフィルター処理
-    document.getElementById("applyFilterBtn").addEventListener("click", () => {
-      const nameFilter = document.getElementById("userFilter").value.trim();
-      const selectedDates = Array.from(document.querySelectorAll(".date-filter-checkbox:checked")).map(cb => cb.value);
-      applyLogFilter(nameFilter, selectedDates);
-    });
-    // ログ絞り込み表示関数
-    function applyLogFilter(nameFilter, selectedDates) {
-      const tableBody = document.querySelector("#logTable tbody");
-      tableBody.innerHTML = "";
-
-      db.collection("logs")
-        .orderBy("timestamp", "desc")
-        .get()
-        .then(snapshot => {
-          snapshot.forEach(doc => {
-            const data = doc.data();
-            const matchName = !nameFilter || (data.user || "").includes(nameFilter);
-            const matchDate = selectedDates.length === 0 || selectedDates.includes(data.date);
-
-            if (matchName && matchDate) {
-              const row = document.createElement("tr");
-              row.innerHTML = `
-                <td>${data.user || ""}</td>
-                <td>${data.uid || ""}</td>
-                <td>${data.from || ""}</td>
-                <td>${data.to || ""}</td>
-                <td>${data.date || ""}</td>
-                <td>${data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : ""}</td>
-              `;
-              tableBody.appendChild(row);
-            }
-          });
-        })
-        .catch(err => {
-          console.error("ログの取得失敗:", err);
+      if (dateFilterVal) {
+        logs = logs.filter(log => {
+          if (!log.timestamp || !log.timestamp.toDate) return false;
+         const logDate = log.field;
+return logDate === dateFilterVal;
         });
+      }
+      renderLogs(logs);
     }
 
-    // 初期化：ログイン後などに呼び出す（例：admin画面表示時）
-    firebase.auth().onAuthStateChanged(user => {
-      if (user) {
-        loadDateCheckboxes();
-        applyLogFilter("", []); // 全ログ初期表示
-      }
-    });
+    function clearFilter() {
+      document.getElementById("userFilter").value = "";
+      document.getElementById("dateFilter").value = "";
+      loadLogs();
+    }
 
     // --- ログイン処理 ---
    document.getElementById("loginBtn").addEventListener("click", async () => {
