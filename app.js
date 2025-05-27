@@ -16,6 +16,8 @@ const db = getFirestore(app);
 window.users = {};
 window.currentUser = "";
 const maruUsers = {};
+const highlighted = {}; // ←これをグローバルに
+
 
 function sha256(str) {
   const buffer = new TextEncoder().encode(str);
@@ -113,7 +115,7 @@ async function showAllResults() {
     });
   });
 
-  const highlighted = {};
+ 
   dates.forEach(date => {
     highlighted[date] = maruUsers[date].length >= MAX ? maruUsers[date].slice(0, MAX) : [];
   });
