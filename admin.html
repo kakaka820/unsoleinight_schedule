@@ -436,11 +436,13 @@ msg.style.color = "green";
 
     async function addLog({ user, uid, from, to }) {
   try {
+    const now = new Date(); 
     await db.collection("logs").add({
       user,
       uid,
       from,
       to,
+      date: now.toISOString().split("T")[0],
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
     });
   } catch (e) {
