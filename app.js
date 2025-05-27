@@ -173,9 +173,9 @@ window.login = async function () {
       document.getElementById("formSection").classList.remove("hidden");
       document.getElementById("resultSection").classList.remove("hidden");
       document.getElementById("welcomeMsg").textContent = `${id} さんとしてログイン中`;
+      await showAllResults();
       await renderForm();
       await loadPreviousAnswers();
-      await showAllResults();
       document.getElementById("loginError").textContent = "";
       document.getElementById("submitMessage").textContent = "";
     } else {
