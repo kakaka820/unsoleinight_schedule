@@ -41,7 +41,7 @@ async function renderForm() {
     dateCell.textContent = `${date}`;
     row.appendChild(dateCell);
 
-    ["〇", "△", "×"].forEach(choice => {
+    ["〇", "×", "観戦"].forEach(choice => {
       const td = document.createElement("td");
       const input = document.createElement("input");
       input.type = "radio";
