@@ -540,9 +540,9 @@ if (selectedOptions.length > 0) {
       if (userFilter) {
         logs = logs.filter(log => (log.userId || "").toLowerCase().includes(userFilter));
       }
-      if (dateFilterVal) {
-    logs = logs.filter(log => log.date === dateFilterVal);
-  }
+      if (selectedDates.length > 0) {
+  logs = logs.filter(log => selectedDates.includes(log.date));
+}
       renderLogs(logs);
     }
 
