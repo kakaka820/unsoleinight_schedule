@@ -154,6 +154,7 @@ formRows.forEach(row => {
   const dateCell = row.cells[0];
   const date = dateCell.textContent;
   if (highlighted[date]?.length > 0) {
+    console.log("ハイライト対象日付:", date, "ユーザー:", highlighted[date]);
     dateCell.classList.add("highlight");
   } else {
     dateCell.classList.remove("highlight");
