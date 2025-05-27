@@ -73,6 +73,7 @@ th {
 textarea {
   width: 100%;
   height: 60px;
+  margin-top: 8px;
   margin-bottom: 8px; /* ←★ コメント欄の下に余白を追加 */
 }
 
