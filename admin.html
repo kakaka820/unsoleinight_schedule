@@ -533,6 +533,8 @@ if (selectedOptions.length > 0) {
 
     async function applyFilter() {
       const userFilter = document.getElementById("userFilter").value.trim().toLowerCase();
+       const dateFilter = document.getElementById("dateFilter");
+  const dateFilterVal = dateFilter.value; // ← ここで選択された値を取得！
       let logs = await fetchLogs();
       if (userFilter) {
         logs = logs.filter(log => (log.userId || "").toLowerCase().includes(userFilter));
