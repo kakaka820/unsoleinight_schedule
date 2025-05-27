@@ -209,9 +209,7 @@ UID以外の問題は解決済。UIDに関しては、今はUIDがそもそもfi
       </div>
       <div>
         <label for="dateFilter">日付で絞り込み：</label>
-       <select id="dateFilter">
-  <option value="">-- 全て --</option>
-       </select>
+        <input type="date" id="dateFilter" />
       </div>
       <div>
         <button id="applyFilterBtn">絞り込み</button>
@@ -436,13 +434,11 @@ msg.style.color = "green";
 
     async function addLog({ user, uid, from, to }) {
   try {
-    const now = new Date(); 
     await db.collection("logs").add({
       user,
       uid,
       from,
       to,
-      date: now.toISOString().split("T")[0],
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
     });
   } catch (e) {
@@ -510,33 +506,6 @@ tr.appendChild(timeTd);
 
     // --- フィルタリング ---
 
-
-    async function displayDateOptions() { //firebaseの日程を使って <select> に反映
-  const select = document.getElementById("dateFilter");
-  select.innerHTML = `<option value="">-- 全て --</option>`;
-
-  try {
-    const doc = await db.collection("settings").doc("eventDates").get();
-console.log("取得したdoc:", doc.exists, doc.data());
-    if (doc.exists) {
-      const data = doc.data();
-      const dates = data.list || [];
-console.log("取得した日程:", dates);
-      dates.forEach(date => {
-        const option = document.createElement("option");
-        option.value = date;
-        option.textContent = date;
-        select.appendChild(option);
-      });
-    }
-  } catch (e) {
-    console.error("日程フィルターの取得失敗:", e);
-  }
-}
-
-
-
-    
     async function applyFilter() {
       const userFilter = document.getElementById("userFilter").value.trim().toLowerCase();
       const dateFilterVal = document.getElementById("dateFilter").value;
@@ -545,9 +514,13 @@ console.log("取得した日程:", dates);
       if (userFilter) {
         logs = logs.filter(log => (log.userId || "").toLowerCase().includes(userFilter));
       }
-     if (dateFilterVal) {
-    logs = logs.filter(log => log.date === dateFilterVal);
-  }
+      if (dateFilterVal) {
+        logs = logs.filter(log => {
+          if (!log.timestamp || !log.timestamp.toDate) return false;
+         const logDate = log.field;
+return logDate === dateFilterVal;
+        });
+      }
       renderLogs(logs);
     }
 
@@ -556,7 +529,6 @@ console.log("取得した日程:", dates);
       document.getElementById("dateFilter").value = "";
       loadLogs();
     }
-
 
     // --- ログイン処理 ---
    document.getElementById("loginBtn").addEventListener("click", async () => {
@@ -587,7 +559,6 @@ console.log("取得した日程:", dates);
     async function initializeAdmin() {
       await displayMaxCapacity();
       await displayDates();
-      await displayDateOptions();
       await loadLogs();
     }
 
