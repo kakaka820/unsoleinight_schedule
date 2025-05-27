@@ -534,7 +534,8 @@ if (selectedOptions.length > 0) {
     async function applyFilter() {
       const userFilter = document.getElementById("userFilter").value.trim().toLowerCase();
        const dateFilter = document.getElementById("dateFilter");
-  const dateFilterVal = dateFilter.value; // ← ここで選択された値を取得！
+      // 複数選択されている日付の配列を取得
+  const selectedDates = Array.from(dateFilter.selectedOptions).map(option => option.value);
       let logs = await fetchLogs();
       if (userFilter) {
         logs = logs.filter(log => (log.userId || "").toLowerCase().includes(userFilter));
@@ -547,7 +548,10 @@ if (selectedOptions.length > 0) {
 
     function clearFilter() {
       document.getElementById("userFilter").value = "";
-      document.getElementById("dateFilter").value = "";
+      const dateFilter = document.getElementById("dateFilter");
+  for (let option of dateFilter.options) {
+    option.selected = false;  // 全部の選択を外す
+  }
       loadLogs();
     }
 
