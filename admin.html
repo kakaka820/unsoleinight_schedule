@@ -515,9 +515,11 @@ tr.appendChild(timeTd);
 
   try {
     const doc = await db.collection("settings").doc("eventDates").get();
+console.log("取得したdoc:", doc.exists, doc.data());
     if (doc.exists) {
       const data = doc.data();
       const dates = data.list || [];
+console.log("取得した日程:", dates);
       dates.forEach(date => {
         const option = document.createElement("option");
         option.value = date;
@@ -529,6 +531,7 @@ tr.appendChild(timeTd);
     console.error("日程フィルターの取得失敗:", e);
   }
 }
+
 
 
     
