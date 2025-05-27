@@ -197,6 +197,7 @@ try {
   const userCredential = await signInAnonymously(auth);
   const uid = userCredential.user.uid;
   window.uid = uid;
+  console.log("UID取得成功", uid);
   const userRef = doc(db, "users", id);
   await setDoc(userRef, { uid }, { merge: true });  // uidだけを追記保存
   console.log("UID保存成功:", uid);
@@ -278,7 +279,7 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
     if (oldVal !== newVal) {
       logPromises.push(addDoc(collection(db, "logs"), {
         userId: window.currentUser,
-        uid: window.uid,
+        uid: window.uid || "unknown",
         date,
         from: oldVal,
         to: newVal,
@@ -289,7 +290,7 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
   if (comment !== prevComment) {
     logPromises.push(addDoc(collection(db, "logs"), {
       userId: window.currentUser,
-      uid: window.uid,
+      uid: window.uid || "unknown",
       field: "comment",
       from: prevComment,
       to: comment,
