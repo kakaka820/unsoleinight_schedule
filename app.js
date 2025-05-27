@@ -121,7 +121,7 @@ async function showAllResults() {
   });
 
   if (Object.values(maruUsers).some(arr => arr.length >= MAX)) {
-    if (status) status.textContent = "この会はすでに満席となりました。以降は観戦/リザーバー枠での参加を募集いたします。";
+    if (status) status.textContent = "満席となった会に関しましてはリザーバー枠での参加を募集いたします。";
   }
 
   docsArray.forEach(({ id, data }) => {
