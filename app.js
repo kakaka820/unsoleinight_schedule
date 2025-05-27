@@ -267,6 +267,7 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
   const prevComment = window.users[window.currentUser]?.comment || "";
 
   const userRef = doc(db, "users", window.currentUser);
+  const userSnap = await getDoc(userRef);
   const dates = await fetchCandidateDates();
   const logPromises = [];
 
@@ -276,7 +277,7 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
     if (oldVal !== newVal) {
       logPromises.push(addDoc(collection(db, "logs"), {
         userId: window.currentUser,
-        uid: user.uid,
+        uid: uid,
         date,
         from: oldVal,
         to: newVal,
