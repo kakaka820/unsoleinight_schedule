@@ -517,7 +517,7 @@ tr.appendChild(timeTd);
       if (dateFilterVal) {
         logs = logs.filter(log => {
           if (!log.timestamp || !log.timestamp.toDate) return false;
-         const logDate = log.field;
+         const logDate = log.list;
 return logDate === dateFilterVal;
         });
       }
