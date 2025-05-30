@@ -399,7 +399,9 @@ const editBtn = document.createElement("button");
       
 
 //ログの削除
-const logsRef = db.collection("logs");
+  
+async function cleanUpLogs() {
+  const logsRef = db.collection("logs");
 
   try {
     const snapshot = await logsRef.get();
@@ -426,8 +428,7 @@ const logsRef = db.collection("logs");
     console.error("ログのクリーンアップ中にエラー:", error);
     alert("エラーが発生しました。コンソールをご確認ください。");
   }
-});
-
+}
 
 
 
