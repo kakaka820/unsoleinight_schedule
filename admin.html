@@ -375,6 +375,37 @@ const editBtn = document.createElement("button");
       }
     });
 
+// --- ログ削除 ---
+async function cleanUpLogs() {
+  const logsRef = db.collection("logs");
+
+  try {
+    const snapshot = await logsRef.get();
+    let deleteCount = 0;
+
+    const batch = db.batch();
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (!data.date || data.date === "") {
+        batch.delete(doc.ref);
+        deleteCount++;
+      }
+    });
+
+    if (deleteCount > 0) {
+      await batch.commit();
+      alert(`${deleteCount} 件の不要ログを削除しました。`);
+    } else {
+      alert("削除対象のログはありませんでした。");
+    }
+
+  } catch (error) {
+    console.error("ログのクリーンアップ中にエラー:", error);
+    alert("エラーが発生しました。コンソールをご確認ください。");
+  }
+}
+
+// --- 日程削除 ---
 async function removeDate(dateStr) {
   const msg = document.getElementById("datesMessage");
   msg.textContent = "";
@@ -382,7 +413,6 @@ async function removeDate(dateStr) {
   if (!confirm(`今削除しようとしている日程は「${dateStr}」です。本当に削除しますか？`)) return;
 
   try {
-    // 日程を削除
     await db.collection("settings").doc("eventDates").update({
       list: firebase.firestore.FieldValue.arrayRemove(dateStr)
     });
@@ -390,10 +420,9 @@ async function removeDate(dateStr) {
     msg.textContent = "日程を削除しました。";
     msg.style.color = "green";
 
-    // 日程リストを更新
     displayDates();
 
-    // 不要ログをクリーンアップ
+    // ✅ ここで不要ログをクリーンアップ
     await cleanUpLogs();
 
   } catch (e) {
@@ -402,7 +431,6 @@ async function removeDate(dateStr) {
     msg.style.color = "red";
   }
 }
-
 
 
 // 日程の編集
