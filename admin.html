@@ -397,6 +397,41 @@ const editBtn = document.createElement("button");
       }
     }
       
+
+//ログの削除
+const logsRef = db.collection("logs");
+
+  try {
+    const snapshot = await logsRef.get();
+    let deleteCount = 0;
+
+    const batch = db.batch();
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      // date が "" または undefined/null の場合に削除対象とする
+      if (!data.date || data.date === "") {
+        batch.delete(doc.ref);
+        deleteCount++;
+      }
+    });
+
+    if (deleteCount > 0) {
+      await batch.commit();
+      alert(`${deleteCount} 件の不要ログを削除しました。`);
+    } else {
+      alert("削除対象のログはありませんでした。");
+    }
+
+  } catch (error) {
+    console.error("ログのクリーンアップ中にエラー:", error);
+    alert("エラーが発生しました。コンソールをご確認ください。");
+  }
+});
+
+
+
+
+
 // 日程の編集
     async function editDate(index, oldDateStr) {
       const newDateStr = prompt("新しい日程を入力してください：", oldDateStr);
