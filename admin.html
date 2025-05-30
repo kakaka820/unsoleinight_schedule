@@ -432,13 +432,14 @@ msg.style.color = "green";
 
     // --- ログ管理 ---
 
-    async function addLog({ user, uid, from, to }) {
+    async function addLog({ userId, uid, from, to, date }) {
   try {
     await db.collection("logs").add({
       userId,
       uid,
       from,
       to,
+      date,
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
     });
   } catch (e) {
