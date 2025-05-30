@@ -435,7 +435,7 @@ msg.style.color = "green";
     async function addLog({ user, uid, from, to }) {
   try {
     await db.collection("logs").add({
-      user,
+      userId,
       uid,
       from,
       to,
