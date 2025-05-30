@@ -375,61 +375,33 @@ const editBtn = document.createElement("button");
       }
     });
 
-// 日程の削除
-    async function removeDate(dateStr) {
-      const msg = document.getElementById("datesMessage");
-      msg.textContent = "";
+async function removeDate(dateStr) {
+  const msg = document.getElementById("datesMessage");
+  msg.textContent = "";
 
-      if (!confirm(`今削除しようとしている日程は「${dateStr}」です。本当に削除しますか？`)) return;
-
-      try {
-        await db.collection("settings").doc("eventDates").update({
-          list: firebase.firestore.FieldValue.arrayRemove(dateStr)
-        });
-        msg.textContent = "日程を削除しました。";
-        msg.style.color = "green";
-        displayDates();
-
-  } catch (e) {
-        console.error("日程削除失敗:", e);
-        msg.textContent = "日程の削除に失敗しました。";
-        msg.style.color = "red";
-      }
-    }
-      
-
-//ログの削除
-  
-async function cleanUpLogs() {
-  const logsRef = db.collection("logs");
+  if (!confirm(`今削除しようとしている日程は「${dateStr}」です。本当に削除しますか？`)) return;
 
   try {
-    const snapshot = await logsRef.get();
-    let deleteCount = 0;
-
-    const batch = db.batch();
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      // date が "" または undefined/null の場合に削除対象とする
-      if (!data.date || data.date === "") {
-        batch.delete(doc.ref);
-        deleteCount++;
-      }
+    // 日程を削除
+    await db.collection("settings").doc("eventDates").update({
+      list: firebase.firestore.FieldValue.arrayRemove(dateStr)
     });
 
-    if (deleteCount > 0) {
-      await batch.commit();
-      alert(`${deleteCount} 件の不要ログを削除しました。`);
-    } else {
-      alert("削除対象のログはありませんでした。");
-    }
+    msg.textContent = "日程を削除しました。";
+    msg.style.color = "green";
 
-  } catch (error) {
-    console.error("ログのクリーンアップ中にエラー:", error);
-    alert("エラーが発生しました。コンソールをご確認ください。");
+    // 日程リストを更新
+    displayDates();
+
+    // 不要ログをクリーンアップ
+    await cleanUpLogs();
+
+  } catch (e) {
+    console.error("日程削除失敗:", e);
+    msg.textContent = "日程の削除に失敗しました。";
+    msg.style.color = "red";
   }
 }
-
 
 
 
