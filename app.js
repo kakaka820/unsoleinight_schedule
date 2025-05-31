@@ -309,3 +309,19 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
   await showAllResults();
   document.getElementById("submitMessage").textContent = "送信しました！";
 });
+// すでに他のスクリプトがある部分
+
+// エンターキーのイベントリスナー
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Enter') {
+    // フォーカスされているボタンを取得
+    const focusedButton = document.activeElement;
+
+    // エンターキーが押されたとき、フォーカスされているボタンが対象のボタンかを判定
+    if (focusedButton && focusedButton.tagName === 'BUTTON') {
+      // ボタンをクリックする
+      focusedButton.click();
+    }
+  }
+});
+
