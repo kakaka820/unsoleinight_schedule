@@ -356,11 +356,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function logout() {
-    currentUserId = null;
-    currentUid = null;
-    showLoginForm(true);
-  }
+  
 
   // --- 初期化 ---
   async function initializeAdminPanel() {
