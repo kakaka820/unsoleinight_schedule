@@ -209,6 +209,10 @@ UID以外の問題は解決済。UIDに関しては、今はUIDがそもそもfi
         <input type="text" id="userFilter" placeholder="ユーザー名" />
       </div>
       <div>
+  <label for="uidFilter">UIDで絞り込み：</label>
+  <input type="text" id="uidFilter" placeholder="UID" />
+</div>
+      <div>
        <label for="dateFilter">日付で絞り込み：</label>
 <select id="dateFilter" multiple size="5"></select>
       </div>
@@ -222,11 +226,11 @@ UID以外の問題は解決済。UIDに関しては、今はUIDがそもそもfi
       <thead>
         <tr>
   <th>ユーザー</th>
-  <th>UID</th>
   <th>元の状態</th>
   <th>更新した状態</th>
   <th>日付</th>
   <th>変更時刻</th>
+  <th>UID</th>
 </tr>
       </thead>
       <tbody></tbody>
@@ -508,10 +512,6 @@ msg.style.color = "green";
     console.log("log内容:", log);
     const tr = document.createElement("tr");
 
-    const userTd = document.createElement("td");
-    userTd.textContent = log.userId || "-";
-    tr.appendChild(userTd);
-
     const uidTd = document.createElement("td");
     uidTd.textContent = log.uid || "-";
     tr.appendChild(uidTd);
@@ -536,6 +536,10 @@ if (log.timestamp && typeof log.timestamp.toDate === "function") {
   timeTd.textContent = "-";
 }
 tr.appendChild(timeTd);
+
+    const userTd = document.createElement("td");
+    userTd.textContent = log.userId || "-";
+    tr.appendChild(userTd);
 
 
     tbody.appendChild(tr);
@@ -566,6 +570,7 @@ async function populateDateFilterOptions() {
 
     async function applyFilter() {
       const userFilter = document.getElementById("userFilter").value.trim().toLowerCase();
+      const uidFilter = document.getElementById("uidFilter").value.trim().toLowerCase();  // UIDフィルタ
        const dateFilter = document.getElementById("dateFilter");
       // 複数選択されている日付の配列を取得
   const selectedDates = Array.from(dateFilter.selectedOptions).map(option => option.value);
@@ -573,6 +578,9 @@ async function populateDateFilterOptions() {
       if (userFilter) {
         logs = logs.filter(log => (log.userId || "").toLowerCase().includes(userFilter));
       }
+      if (uidFilter) {
+    logs = logs.filter(log => (log.uid || "").toLowerCase().includes(uidFilter));  // UIDでフィルタリング
+  }
       if (selectedDates.length > 0) {
   logs = logs.filter(log => selectedDates.includes(log.date));
 }
