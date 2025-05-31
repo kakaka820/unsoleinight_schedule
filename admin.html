@@ -391,7 +391,7 @@ async function cleanUpLogs() {
     const batch = db.batch();
     snapshot.forEach(doc => {
       const data = doc.data();
-      if (!data.date || data.date === "") {
+      if (data.date === dateStr) {
         batch.delete(doc.ref);
         deleteCount++;
       }
