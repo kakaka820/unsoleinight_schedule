@@ -428,7 +428,7 @@ async function removeDate(dateStr) {
     displayDates();
 
     // ✅ ここで不要ログをクリーンアップ
-    await cleanUpLogs();
+    await cleanUpLogs(dateStr);
 
   } catch (e) {
     console.error("日程削除失敗:", e);
