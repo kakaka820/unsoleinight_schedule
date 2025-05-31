@@ -29,11 +29,15 @@ UID以外の問題は解決済。UIDに関しては、今はUIDがそもそもfi
   margin-bottom: 10px;
       color: #222;
     }
-   hr {
-  border: 1px solid #ddd;
-  margin: 30px 0;
+ hr {
+  border: 0;
+  border-top: 1px solid #ccc;
+  margin: 20px 0;
 }
-   
+   .section-block {
+  margin-bottom: 40px;
+}
+
     .hidden {
       display: none;
     }
@@ -57,6 +61,7 @@ UID以外の問題は解決済。UIDに関しては、今はUIDがそもそもfi
     input[type="date"],
     input[type="password"] {
       width: 100%;
+      max-width: 100%;
       padding: 10px 12px;
       margin-top: 6px;
       border-radius: 6px;
@@ -73,19 +78,19 @@ UID以外の問題は解決済。UIDに関しては、今はUIDがそもそもfi
       outline: none;
     }
     button {
-      margin-top: 20px;
-      padding: 12px 20px;
-      font-size: 1rem;
-      background-color: #2196F3;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background-color 0.25s ease;
-    }
-    button:hover {
-      background-color: #1769aa;
-    }
+  font-size: 1rem;
+  background-color: #2196F3;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.25s ease;
+}
+button:hover {
+  background-color: #1769aa;
+}
+
     .status-message {
       margin-top: 14px;
       font-weight: 600;
@@ -139,6 +144,7 @@ UID以外の問題は解決済。UIDに関しては、今はUIDがそもそもfi
     }
     #logFilter input {
       width: 100%;
+      max-width: 100%;
       padding: 8px;
       border-radius: 6px;
       border: 1px solid #ccc;
