@@ -311,8 +311,9 @@ function setupEventListeners() {
   document.getElementById("dateFilter").addEventListener("change", filterLogs);
 }
 
-// 初期化
-window.addEventListener("DOMContentLoaded", () => {
-  setupEventListeners();
-  document.getElementById("adminSection").style.display = "none";
-});
+const adminSection = document.getElementById("adminSection");
+if (adminSection) {
+  adminSection.style.display = "none";
+} else {
+  console.warn("adminSection が見つかりませんでした。");
+}
