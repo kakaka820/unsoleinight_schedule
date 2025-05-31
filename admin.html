@@ -512,9 +512,9 @@ msg.style.color = "green";
     console.log("log内容:", log);
     const tr = document.createElement("tr");
 
-    const uidTd = document.createElement("td");
-    uidTd.textContent = log.uid || "-";
-    tr.appendChild(uidTd);
+    const userTd = document.createElement("td");
+    userTd.textContent = log.userId || "-";
+    tr.appendChild(userTd);
 
     const fromTd = document.createElement("td");
     fromTd.textContent = log.from || "-";
@@ -537,10 +537,9 @@ if (log.timestamp && typeof log.timestamp.toDate === "function") {
 }
 tr.appendChild(timeTd);
 
-    const userTd = document.createElement("td");
-    userTd.textContent = log.userId || "-";
-    tr.appendChild(userTd);
-
+ const uidTd = document.createElement("td");
+    uidTd.textContent = log.uid || "-";
+    tr.appendChild(uidTd);
 
     tbody.appendChild(tr);
   }
