@@ -11,7 +11,7 @@
       color: #222;
     }
     .hidden {
-      display: none !important;
+      display: none;
     }
     .container {
       background: #fff;
