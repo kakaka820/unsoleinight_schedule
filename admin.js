@@ -311,9 +311,13 @@ function setupEventListeners() {
   document.getElementById("dateFilter").addEventListener("change", filterLogs);
 }
 
+// イベントリスナーのセットアップを呼び出す（←これがなかった）
+setupEventListeners();
+
 const adminSection = document.getElementById("adminSection");
 if (adminSection) {
   adminSection.style.display = "none";
 } else {
   console.warn("adminSection が見つかりませんでした。");
 }
+
