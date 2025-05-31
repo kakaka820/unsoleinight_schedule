@@ -368,7 +368,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- イベント登録 ---
   document.getElementById("loginBtn").addEventListener("click", login);
-  document.getElementById("logoutBtn").addEventListener("click", logout);
 
   document.getElementById("updateCapacityBtn").addEventListener("click", updateMaxCapacity);
 
