@@ -1,324 +1,316 @@
-// Firebase初期化
+// Firebase 初期化
 const firebaseConfig = {
-  apiKey: "AIzaSyBzYCHcumBzRw3DLs8mjLiGTiXxvxmjLDU",
-  authDomain: "unsoleinight-schedule.firebaseapp.com",
-  projectId: "unsoleinight-schedule",
-  storageBucket: "unsoleinight-schedule.firebasestorage.app",
-  messagingSenderId: "1040333692698",
-  appId: "1:1040333692698:web:fb0e4f481dff8167f756a3"
+  // あなたのFirebase設定をここに貼り付けてください
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-let currentUserId = "";
-let currentUid = "";
-
-// 管理者認証情報（仮）
+// 認証情報
 const ADMIN_ID = "admin";
 const ADMIN_PW = "password";
+let currentUserId = null;
+let currentUid = null;
 
-// --- 定員管理 ---
-
-async function getMaxCapacity() {
-  try {
-    const doc = await db.collection("settings").doc("capacity").get();
-    if (doc.exists) {
-      const data = doc.data();
-      return data.maxCapacity || 3;
-    }
-  } catch (e) {
-    console.error("定員取得失敗:", e);
-  }
-  return 3;
-}
-
+// --- 定員表示・更新 ---
 async function displayMaxCapacity() {
-  const current = await getMaxCapacity();
-  document.getElementById("currentCapacity").textContent = current + "人";
+  const doc = await db.collection("settings").doc("capacity").get();
+  if (doc.exists) {
+    document.getElementById("maxCapacityInput").value = doc.data().value || 1;
+  }
 }
 
 async function updateMaxCapacity() {
-  const newMax = parseInt(document.getElementById("newMax").value);
-  const msgEl = document.getElementById("adminMessage");
-  if (!newMax || newMax < 1) {
-    msgEl.textContent = "1以上の数字を入力してください。";
-    msgEl.style.color = "red";
+  const input = document.getElementById("maxCapacityInput");
+  const value = parseInt(input.value, 10);
+  const msg = document.getElementById("capacityMessage");
+  if (!value || value < 1) {
+    msg.textContent = "1以上の数値を入力してください。";
+    msg.style.color = "red";
     return;
   }
-  try {
-    const ref = db.collection("settings").doc("capacity");
-    const beforeDoc = await ref.get();
-    const beforeData = beforeDoc.exists ? beforeDoc.data() : {};
-    const beforeVal = beforeData.maxCapacity || null;
-
-    await ref.set({ maxCapacity: newMax });
-
-    msgEl.textContent = `定員数を${newMax}人に更新しました。`;
-    msgEl.style.color = "green";
-    document.getElementById("currentCapacity").textContent = newMax + "人";
-
-    // ログ保存
-    await saveLog({
-      user: currentUserId,
-      uid: currentUid,
-      from: { maxCapacity: beforeVal },
-      to: { maxCapacity: newMax },
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  } catch (e) {
-    msgEl.textContent = "更新に失敗しました。";
-    msgEl.style.color = "red";
-    console.error(e);
-  }
+  await db.collection("settings").doc("capacity").set({ value });
+  msg.textContent = "定員を更新しました。";
+  msg.style.color = "green";
 }
 
 // --- 日程管理 ---
+async function displayDates() {
+  const ul = document.getElementById("dateList");
+  ul.innerHTML = "";
 
-async function getEventDates() {
+  const doc = await db.collection("settings").doc("eventDates").get();
+  if (doc.exists) {
+    const dates = doc.data().list || [];
+    dates.forEach((dateStr, index) => {
+      const li = document.createElement("li");
+      li.textContent = dateStr;
+
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "編集";
+      editBtn.onclick = () => editDate(index, dateStr);
+      li.appendChild(editBtn);
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "削除";
+      deleteBtn.onclick = () => deleteDate(index, dateStr);
+      li.appendChild(deleteBtn);
+
+      ul.appendChild(li);
+    });
+  }
+}
+
+async function addDate(dateStr, userId, uid) {
+  const msg = document.getElementById("datesMessage");
+  msg.textContent = "";
+
   try {
-    const doc = await db.collection("settings").doc("eventDates").get();
+    const docRef = db.collection("settings").doc("eventDates");
+    const doc = await docRef.get();
+    let dates = [];
+    if (doc.exists) {
+      dates = doc.data().list || [];
+    }
+    if (dates.includes(dateStr)) {
+      msg.textContent = "すでに同じ日程が存在します。";
+      msg.style.color = "red";
+      return;
+    }
+    dates.push(dateStr);
+    await docRef.set({ list: dates });
+
+    await addLog({ userId, uid, from: "-", to: "追加: " + dateStr, date: dateStr });
+
+    msg.textContent = "日程を追加しました。";
+    msg.style.color = "green";
+    displayDates();
+  } catch (e) {
+    console.error("日程追加失敗:", e);
+    msg.textContent = "日程の追加に失敗しました。";
+    msg.style.color = "red";
+  }
+}
+
+async function deleteDate(index, dateStr) {
+  const confirmed = confirm("本当にこの日程を削除しますか？");
+  if (!confirmed) return;
+
+  const msg = document.getElementById("datesMessage");
+  msg.textContent = "";
+
+  try {
+    const docRef = db.collection("settings").doc("eventDates");
+    const doc = await docRef.get();
     if (doc.exists) {
       const data = doc.data();
-      return data.list || [];
+      const dates = data.list || [];
+      const removed = dates.splice(index, 1);
+      await docRef.update({ list: dates });
+
+      await addLog({ userId: currentUserId, uid: currentUid, from: "削除: " + removed[0], to: "-", date: removed[0] });
+
+      msg.textContent = "日程を削除しました。";
+      msg.style.color = "green";
+      displayDates();
     }
   } catch (e) {
-    console.error("日程取得失敗:", e);
+    console.error("日程削除失敗:", e);
+    msg.textContent = "日程の削除に失敗しました。";
+    msg.style.color = "red";
   }
-  return [];
 }
 
-async function displayEventDates() {
-  const dates = await getEventDates();
-  const ul = document.getElementById("datesList");
-  ul.innerHTML = "";
-  dates.forEach((date, index) => {
-    const li = document.createElement("li");
-    li.textContent = date;
-    const delBtn = document.createElement("button");
-    delBtn.textContent = "削除";
-    delBtn.addEventListener("click", () => removeDate(index));
-    li.appendChild(delBtn);
-    ul.appendChild(li);
-  });
-}
+async function editDate(index, oldDateStr) {
+  const newDateStr = prompt("新しい日程を入力してください：", oldDateStr);
+  if (!newDateStr || newDateStr === oldDateStr) return;
 
-async function addDate() {
-  const input = document.getElementById("newDateInput");
-  const newDate = input.value.trim();
-  const msgEl = document.getElementById("datesMessage");
-  if (!newDate) {
-    msgEl.textContent = "日程を入力してください。";
-    msgEl.style.color = "red";
-    return;
-  }
+  const msg = document.getElementById("datesMessage");
+  msg.textContent = "";
+
   try {
-    const ref = db.collection("settings").doc("eventDates");
-    const doc = await ref.get();
-    const beforeDates = doc.exists ? doc.data().list || [] : [];
-    if (beforeDates.includes(newDate)) {
-      msgEl.textContent = "同じ日程が既にあります。";
-      msgEl.style.color = "red";
-      return;
+    const docRef = db.collection("settings").doc("eventDates");
+    const doc = await docRef.get();
+    if (doc.exists) {
+      const data = doc.data();
+      const dates = data.list || [];
+      dates[index] = newDateStr;
+      await docRef.update({ list: dates });
+      msg.textContent = "日程を更新しました。";
+      msg.style.color = "green";
+      displayDates();
+    } else {
+      msg.textContent = "日程データが存在しません。";
+      msg.style.color = "red";
     }
-    const newDates = [...beforeDates, newDate];
-    await ref.set({ list: newDates });
-
-    msgEl.textContent = "日程を追加しました。";
-    msgEl.style.color = "green";
-    input.value = "";
-    await displayEventDates();
-
-    // ログ保存
-    await saveLog({
-      user: currentUserId,
-      uid: currentUid,
-      from: { list: beforeDates },
-      to: { list: newDates },
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    });
   } catch (e) {
-    msgEl.textContent = "追加に失敗しました。";
-    msgEl.style.color = "red";
-    console.error(e);
+    console.error("日程更新失敗:", e);
+    msg.textContent = "日程の更新に失敗しました。";
+    msg.style.color = "red";
   }
 }
 
-async function removeDate(index) {
-  const msgEl = document.getElementById("datesMessage");
-  try {
-    const ref = db.collection("settings").doc("eventDates");
-    const doc = await ref.get();
-    const beforeDates = doc.exists ? doc.data().list || [] : [];
-    if (index < 0 || index >= beforeDates.length) {
-      msgEl.textContent = "不正なインデックスです。";
-      msgEl.style.color = "red";
-      return;
-    }
-    const newDates = beforeDates.filter((_, i) => i !== index);
-    await ref.set({ list: newDates });
-    msgEl.textContent = "日程を削除しました。";
-    msgEl.style.color = "green";
-    await displayEventDates();
-
-    // ログ保存
-    await saveLog({
-      user: currentUserId,
-      uid: currentUid,
-      from: { list: beforeDates },
-      to: { list: newDates },
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  } catch (e) {
-    msgEl.textContent = "削除に失敗しました。";
-    msgEl.style.color = "red";
-    console.error(e);
-  }
-}
-
-// --- ログ機能 ---
-
-async function saveLog(logData) {
+// --- ログ管理 ---
+async function addLog({ userId, uid, from, to, date }) {
   try {
     await db.collection("logs").add({
-      user: logData.user || "unknown",
-      uid: logData.uid || "",
-      from: logData.from || {},
-      to: logData.to || {},
-      timestamp: logData.timestamp || firebase.firestore.FieldValue.serverTimestamp()
+      userId,
+      uid,
+      from,
+      to,
+      date,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
     });
   } catch (e) {
-    console.error("ログ保存エラー:", e);
+    console.error("ログ追加失敗:", e);
   }
 }
 
-async function getLogs(filterUser = "", filterDate = "") {
+async function fetchLogs() {
   try {
-    let query = db.collection("logs").orderBy("timestamp", "desc");
-    const snapshot = await query.get();
-    const logs = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      timestamp: doc.data().timestamp ? doc.data().timestamp.toDate() : null
-    }));
-
-    // フィルター適用
-    return logs.filter(log => {
-      let ok = true;
-      if (filterUser) {
-        ok = ok && log.user.toLowerCase().includes(filterUser.toLowerCase());
-      }
-      if (filterDate) {
-        if (log.timestamp) {
-          const yyyyMMdd = log.timestamp.toISOString().slice(0, 10);
-          ok = ok && (yyyyMMdd === filterDate);
-        } else {
-          ok = false;
-        }
-      }
-      return ok;
-    });
+    const snapshot = await db.collection("logs").orderBy("timestamp", "desc").limit(100).get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   } catch (e) {
     console.error("ログ取得失敗:", e);
     return [];
   }
 }
 
-async function displayLogs(filterUser = "", filterDate = "") {
-  const logs = await getLogs(filterUser, filterDate);
+function renderLogs(logs) {
   const tbody = document.querySelector("#logTable tbody");
   tbody.innerHTML = "";
+
   if (logs.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">ログがありません。</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#666;">ログがありません。</td></tr>`;
     return;
   }
 
-  logs.forEach(log => {
+  for (const log of logs) {
     const tr = document.createElement("tr");
 
-    // ユーザー
     const userTd = document.createElement("td");
-    userTd.textContent = log.user;
+    userTd.textContent = log.userId || "-";
     tr.appendChild(userTd);
 
-    // UID
     const uidTd = document.createElement("td");
-    uidTd.textContent = log.uid || "";
+    uidTd.textContent = log.uid || "-";
     tr.appendChild(uidTd);
 
-    // from（元の状態）
     const fromTd = document.createElement("td");
-    fromTd.textContent = JSON.stringify(log.from);
+    fromTd.textContent = log.from || "-";
     tr.appendChild(fromTd);
 
-    // to（更新した状態）
     const toTd = document.createElement("td");
-    toTd.textContent = JSON.stringify(log.to);
+    toTd.textContent = log.to || "-";
     tr.appendChild(toTd);
 
-    // 日付（YYYY/MM/DD）
     const dateTd = document.createElement("td");
-    if (log.timestamp) {
-      const dt = log.timestamp;
-      dateTd.textContent = dt.getFullYear() + "/" + String(dt.getMonth() + 1).padStart(2, "0") + "/" + String(dt.getDate()).padStart(2, "0");
-    } else {
-      dateTd.textContent = "-";
-    }
+    dateTd.textContent = log.date || "-";
     tr.appendChild(dateTd);
 
-    // 時刻（HH:MM:SS）
     const timeTd = document.createElement("td");
-    if (log.timestamp) {
-      const dt = log.timestamp;
-      timeTd.textContent = String(dt.getHours()).padStart(2, "0") + ":" + String(dt.getMinutes()).padStart(2, "0") + ":" + String(dt.getSeconds()).padStart(2, "0");
+    if (log.timestamp && typeof log.timestamp.toDate === "function") {
+      const date = log.timestamp.toDate();
+      timeTd.textContent = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
     } else {
       timeTd.textContent = "-";
     }
     tr.appendChild(timeTd);
 
     tbody.appendChild(tr);
-  });
+  }
+}
+
+// --- フィルタリング ---
+async function populateDateFilterOptions() {
+  const select = document.getElementById("dateFilter");
+  select.innerHTML = "";
+
+  try {
+    const doc = await db.collection("settings").doc("eventDates").get();
+    if (doc.exists) {
+      const dates = doc.data().list || [];
+      dates.forEach(dateStr => {
+        const option = document.createElement("option");
+        option.value = dateStr;
+        option.textContent = dateStr;
+        select.appendChild(option);
+      });
+    }
+  } catch (e) {
+    console.error("日付フィルター取得失敗:", e);
+  }
+}
+
+async function applyFilter() {
+  const userFilter = document.getElementById("userFilter").value.trim().toLowerCase();
+  const dateFilter = document.getElementById("dateFilter");
+  const selectedDates = Array.from(dateFilter.selectedOptions).map(option => option.value);
+  let logs = await fetchLogs();
+  if (userFilter) {
+    logs = logs.filter(log => (log.userId || "").toLowerCase().includes(userFilter));
+  }
+  if (selectedDates.length > 0) {
+    logs = logs.filter(log => selectedDates.includes(log.date));
+  }
+  renderLogs(logs);
+}
+
+function clearFilter() {
+  document.getElementById("userFilter").value = "";
+  const dateFilter = document.getElementById("dateFilter");
+  for (let option of dateFilter.options) {
+    option.selected = false;
+  }
+  loadLogs();
 }
 
 // --- ログイン処理 ---
+document.getElementById("loginBtn").addEventListener("click", async () => {
+  const id = document.getElementById("adminId").value;
+  const pw = document.getElementById("adminPw").value;
 
-function showLoginMessage(msg, isError = false) {
-  const el = document.getElementById("loginMessage");
-  el.textContent = msg;
-  el.style.color = isError ? "red" : "green";
-}
+  const msg = document.getElementById("loginMessage");
+  msg.textContent = "";
 
-function showAdminSection() {
-  document.getElementById("loginSection").classList.add("hidden");
-  document.getElementById("adminSection").classList.remove("hidden");
-}
-
-document.getElementById("loginBtn").addEventListener("click", () => {
-  const id = document.getElementById("adminId").value.trim();
-  const pw = document.getElementById("adminPw").value.trim();
   if (id === ADMIN_ID && pw === ADMIN_PW) {
     currentUserId = id;
-    currentUid = "admin-uid"; // 管理者用のUID（仮）
-    showLoginMessage("ログイン成功！");
-    showAdminSection();
-    displayMaxCapacity();
-    displayEventDates();
-    displayLogs();
+    currentUid = "admin";
+    document.getElementById("loginSection").classList.add("hidden");
+    document.getElementById("adminSection").classList.remove("hidden");
+    await displayMaxCapacity();
+    await displayDates();
+    await populateDateFilterOptions();
+    const logs = await fetchLogs();
+    renderLogs(logs);
   } else {
-    showLoginMessage("IDまたはパスワードが違います。", true);
+    msg.textContent = "IDまたはパスワードが違います。";
+    msg.style.color = "red";
   }
 });
 
-// --- ボタンイベント登録 ---
-document.getElementById("updateCapacityBtn").addEventListener("click", updateMaxCapacity);
-document.getElementById("addDateBtn").addEventListener("click", addDate);
+// --- 初期化 ---
+async function initializeAdmin() {
+  await displayMaxCapacity();
+  await displayDates();
+  await loadLogs();
+}
 
-document.getElementById("applyFilterBtn").addEventListener("click", () => {
-  const userFilter = document.getElementById("userFilter").value.trim();
-  const dateFilter = document.getElementById("dateFilter").value.trim();
-  displayLogs(userFilter, dateFilter);
+async function loadLogs() {
+  const logs = await fetchLogs();
+  renderLogs(logs);
+}
+
+// --- イベント登録 ---
+document.getElementById("updateCapacityBtn").addEventListener("click", updateMaxCapacity);
+document.getElementById("addDateBtn").addEventListener("click", () => {
+  const dateStr = document.getElementById("newDateInput").value.trim();
+  if (!dateStr) {
+    document.getElementById("datesMessage").textContent = "日程を入力してください。";
+    document.getElementById("datesMessage").style.color = "red";
+    return;
+  }
+  addDate(dateStr, currentUserId, currentUid);
+  document.getElementById("newDateInput").value = "";
 });
-document.getElementById("clearFilterBtn").addEventListener("click", () => {
-  document.getElementById("userFilter").value = "";
-  document.getElementById("dateFilter").value = "";
-  displayLogs();
-});
+document.getElementById("applyFilterBtn").addEventListener("click", applyFilter);
+document.getElementById("clearFilterBtn").addEventListener("click", clearFilter);
