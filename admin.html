@@ -381,7 +381,7 @@ const editBtn = document.createElement("button");
     });
 
 // --- ログ削除 ---
-async function cleanUpLogs() {
+async function cleanUpLogs(dateStr) {
   const logsRef = db.collection("logs");
 
   try {
