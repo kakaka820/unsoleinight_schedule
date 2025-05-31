@@ -1,6 +1,15 @@
 // Firebase 初期化
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
 const firebaseConfig = {
-  // あなたのFirebase設定をここに貼り付けてください
+  apiKey: "AIzaSyDs3xNPpmdzqD1nww2s6mIPbYHtsRvXeY0",
+  authDomain: "ikinarimvp.firebaseapp.com",
+  projectId: "ikinarimvp",
+  storageBucket: "ikinarimvp.firebasestorage.app",
+  messagingSenderId: "587616153202",
+  appId: "1:587616153202:web:5b6cbc5ca3ac3e8c42dceb"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
