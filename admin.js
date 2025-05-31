@@ -314,5 +314,5 @@ function setupEventListeners() {
 // 初期化
 window.addEventListener("DOMContentLoaded", () => {
   setupEventListeners();
-  document.getElementById("adminPanel").style.display = "none";
+  document.getElementById("adminSection").style.display = "none";
 });
