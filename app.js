@@ -317,10 +317,16 @@ document.addEventListener('keydown', function(event) {
     // フォーカスされているボタンを取得
     const focusedButton = document.activeElement;
 
-    // エンターキーが押されたとき、フォーカスされているボタンが対象のボタンかを判定
+   // ボタンがフォーカスされているか確認し、特定のボタンにのみ反応
     if (focusedButton && focusedButton.tagName === 'BUTTON') {
-      // ボタンをクリックする
-      focusedButton.click();
+      if (
+        focusedButton.id === 'loginButton' ||
+        focusedButton.id === 'registerButton' ||
+        focusedButton.id === 'submitButton'
+      ) {
+        // 該当のボタンをクリック
+        focusedButton.click();
+      }
     }
   }
 });
