@@ -304,4 +304,93 @@ document.addEventListener("DOMContentLoaded", () => {
         // Firestoreでは直接「in」演算子は配列サイズ最大10件まで
         // 日付が多い場合は先頭10件まで絞り込み対応
         const limitedDates = selectedDates.slice(0, 10);
-        constraints
+        constraints.push(where("date", "in", limitedDates));
+      }
+
+      let q;
+      if (constraints.length > 0) {
+        q = query(logsCol, ...constraints, orderBy("timestamp", "desc"), limit(100));
+      } else {
+        q = query(logsCol, orderBy("timestamp", "desc"), limit(100));
+      }
+
+      const snapshot = await getDocs(q);
+      const filteredLogs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      renderLogs(filteredLogs);
+    } catch (e) {
+      console.error("フィルター適用失敗:", e);
+    }
+  }
+
+  function clearFilters() {
+    document.getElementById("userFilter").value = "";
+    document.getElementById("dateFilter").selectedIndex = -1;
+    loadAllLogs();
+  }
+
+  // --- ログ全件表示 ---
+  async function loadAllLogs() {
+    const logs = await fetchLogs();
+    renderLogs(logs);
+  }
+
+  // --- ログイン処理 ---
+  function showLoginForm(show) {
+    document.getElementById("loginForm").style.display = show ? "block" : "none";
+    document.getElementById("adminPanel").style.display = show ? "none" : "block";
+  }
+
+  function login() {
+    const inputId = document.getElementById("adminId").value.trim();
+    const inputPw = document.getElementById("adminPw").value.trim();
+    const msg = document.getElementById("loginMessage");
+
+    if (inputId === ADMIN_ID && inputPw === ADMIN_PW) {
+      currentUserId = ADMIN_ID;
+      currentUid = "admin-uid";
+      msg.textContent = "";
+      showLoginForm(false);
+      initializeAdminPanel();
+    } else {
+      msg.textContent = "IDかパスワードが違います";
+      msg.style.color = "red";
+    }
+  }
+
+  function logout() {
+    currentUserId = null;
+    currentUid = null;
+    showLoginForm(true);
+  }
+
+  // --- 初期化 ---
+  async function initializeAdminPanel() {
+    await displayMaxCapacity();
+    await displayDates();
+    await populateDateFilterOptions();
+    await loadAllLogs();
+  }
+
+  // --- イベント登録 ---
+  document.getElementById("loginBtn").addEventListener("click", login);
+  document.getElementById("logoutBtn").addEventListener("click", logout);
+
+  document.getElementById("updateCapacityBtn").addEventListener("click", updateMaxCapacity);
+
+  document.getElementById("addDateBtn").addEventListener("click", () => {
+    const dateInput = document.getElementById("newDateInput");
+    const dateStr = dateInput.value.trim();
+    if (!dateStr) {
+      alert("日程を入力してください。");
+      return;
+    }
+    addDate(dateStr, currentUserId, currentUid);
+    dateInput.value = "";
+  });
+
+  document.getElementById("applyFilterBtn").addEventListener("click", applyFilters);
+  document.getElementById("clearFilterBtn").addEventListener("click", clearFilters);
+
+  // 初期表示はログイン画面
+  showLoginForm(true);
+});
