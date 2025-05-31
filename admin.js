@@ -15,7 +15,6 @@ import {
   serverTimestamp,
   orderBy,
   limit,
-  and
 } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
 document.addEventListener("DOMContentLoaded", () => {
