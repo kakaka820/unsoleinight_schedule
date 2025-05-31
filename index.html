@@ -12,7 +12,7 @@
     <h2>ログイン</h2>
     <input id="userId" placeholder="ユーザーID"><br>
     <input id="password" type="password" placeholder="パスワード"><br>
-    <button onclick="login()">ログイン</button>
+    <button id="loginButton" onclick="login()">ログイン</button>
     <button onclick="showRegister()">新規登録</button>
     <p id="loginError"></p>
   </div>
@@ -21,7 +21,7 @@
     <h2>新規登録</h2>
     <input id="newUserId" placeholder="ユーザーID"><br>
     <input id="newPassword" type="password" placeholder="パスワード"><br>
-    <button onclick="register()">登録</button>
+    <button id="registerButton" onclick="register()">登録</button>
     <button onclick="backToLogin()">戻る</button>
     <p id="registerMessage"></p>
   </div>
@@ -43,7 +43,7 @@
         <tbody id="form-body"></tbody>
       </table>
       <textarea id="comment" placeholder="コメントの追記のみでは列の変更は起きません。赤枠で強調表示されている会はすでに満席の会です。"></textarea><br>
-      <button type="submit">送信・リロード</button>
+      <button id="submitButton" type="submit">送信・リロード</button>
     </form>
     <p id="submitMessage"></p>
   </div>
