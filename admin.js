@@ -281,7 +281,7 @@ function login() {
     msg.textContent = "ログイン成功";
     msg.style.color = "green";
     document.getElementById("loginForm").style.display = "none";
-    document.getElementById("adminPanel").style.display = "block";
+    document.getElementById("adminSection").style.display = "block";
 
     // 初期データ表示
     displayMaxCapacity();
