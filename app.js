@@ -319,11 +319,7 @@ document.addEventListener('keydown', function(event) {
 
    // ボタンがフォーカスされているか確認し、特定のボタンにのみ反応
     if (focusedButton && focusedButton.tagName === 'BUTTON') {
-      if (
-        focusedButton.id === 'loginButton' ||
-        focusedButton.id === 'registerButton' ||
-        focusedButton.id === 'submitButton'
-      ) {
+      {
         // 該当のボタンをクリック
         focusedButton.click();
       }
