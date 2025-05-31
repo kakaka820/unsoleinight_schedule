@@ -1,7 +1,22 @@
-// admin.js（モジュール形式で使う場合の完全版） 
+// admin.js（モジュール形式で使う場合の完全版）
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-import { getFirestore, doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  updateDoc,
+  setDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  serverTimestamp,
+  orderBy,
+  limit,
+  and
+} from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   // Firebase設定
@@ -11,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
     projectId: "ikinarimvp",
     storageBucket: "ikinarimvp.firebasestorage.app",
     messagingSenderId: "587616153202",
-    appId: "1:587616153202:web:5b6cbc5ca3ac3e8c42dceb"
+    appId: "1:587616153202:web:5b6cbc5ca3ac3e8c42dceb",
   };
 
   // 初期化
@@ -100,6 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
       msg.textContent = "日程を追加しました。";
       msg.style.color = "green";
       displayDates();
+      await populateDateFilterOptions();
     } catch (e) {
       console.error("日程追加失敗:", e);
       msg.textContent = "日程の追加に失敗しました。";
@@ -127,6 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
         msg.textContent = "日程を削除しました。";
         msg.style.color = "green";
         displayDates();
+        await populateDateFilterOptions();
       }
     } catch (e) {
       console.error("日程削除失敗:", e);
@@ -147,11 +164,19 @@ document.addEventListener("DOMContentLoaded", () => {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const dates = docSnap.data().list || [];
+
+        if (dates.includes(newDateStr)) {
+          msg.textContent = "すでに同じ日程が存在します。";
+          msg.style.color = "red";
+          return;
+        }
+
         dates[index] = newDateStr;
         await updateDoc(docRef, { list: dates });
         msg.textContent = "日程を更新しました。";
         msg.style.color = "green";
         displayDates();
+        await populateDateFilterOptions();
       } else {
         msg.textContent = "日程データが存在しません。";
         msg.style.color = "red";
@@ -185,7 +210,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const logsCol = collection(db, "logs");
       const q = query(logsCol, orderBy("timestamp", "desc"), limit(100));
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     } catch (e) {
       console.error("ログ取得失敗:", e);
       return [];
@@ -247,7 +272,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const dates = docSnap.data().list || [];
-        dates.forEach(dateStr => {
+        dates.forEach((dateStr) => {
           const option = document.createElement("option");
           option.value = dateStr;
           option.textContent = dateStr;
@@ -259,60 +284,24 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  async function applyDateFilter() {
-    const selectedDate = document.getElementById("dateFilter").value;
+  // 複数選択のフィルター適用 (ユーザーIDと日付複数対応)
+  async function applyFilters() {
+    const userIdFilter = document.getElementById("userFilter").value.trim();
+    const dateSelect = document.getElementById("dateFilter");
+    const selectedDates = Array.from(dateSelect.selectedOptions).map((opt) => opt.value);
+
     try {
       const logsCol = collection(db, "logs");
-      let q;
-      if (selectedDate) {
-        q = query(logsCol, where("date", "==", selectedDate), orderBy("timestamp", "desc"), limit(100));
-      } else {
-        q = query(logsCol, orderBy("timestamp", "desc"), limit(100));
+      let constraints = [];
+
+      if (userIdFilter) {
+        constraints.push(where("userId", "==", userIdFilter));
       }
-      const snapshot = await getDocs(q);
-      const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      renderLogs(logs);
-    } catch (e) {
-      console.error("ログ取得失敗:", e);
-    }
-  }
 
-  // --- ログイン処理 ---
-  function login(userId, password) {
-    if (userId === ADMIN_ID && password === ADMIN_PW) {
-      currentUserId = userId;
-      currentUid = "admin-uid"; // 管理者用UIDを適当に設定
-      document.getElementById("loginSection").style.display = "none";
-      document.getElementById("adminSection").style.display = "block";
-      displayMaxCapacity();
-      displayDates();
-      populateDateFilterOptions();
-      fetchLogs().then(renderLogs);
-      document.getElementById("loginMessage").textContent = "";
-    } else {
-      document.getElementById("loginMessage").textContent = "IDまたはパスワードが違います。";
-      document.getElementById("loginMessage").style.color = "red";
-    }
-  }
-
-  document.getElementById("loginBtn").addEventListener("click", () => {
-    const userId = document.getElementById("userIdInput").value.trim();
-    const password = document.getElementById("passwordInput").value.trim();
-    login(userId, password);
-  });
-
-  // --- 各種ボタンイベント ---
-  document.getElementById("updateCapacityBtn").addEventListener("click", updateMaxCapacity);
-
-  document.getElementById("addDateBtn").addEventListener("click", () => {
-    const dateInput = document.getElementById("newDateInput").value.trim();
-    if (!dateInput) return alert("日程を入力してください。");
-    addDate(dateInput, currentUserId, currentUid);
-  });
-
-  document.getElementById("filterDateBtn").addEventListener("click", applyDateFilter);
-
-  // 初期状態はログイン画面のみ表示
-  document.getElementById("loginSection").style.display = "block";
-  document.getElementById("adminSection").style.display = "none";
-});
+      if (selectedDates.length === 1) {
+        constraints.push(where("date", "==", selectedDates[0]));
+      } else if (selectedDates.length > 1) {
+        // Firestoreでは直接「in」演算子は配列サイズ最大10件まで
+        // 日付が多い場合は先頭10件まで絞り込み対応
+        const limitedDates = selectedDates.slice(0, 10);
+        constraints
