@@ -14,7 +14,7 @@ import {
   addDoc,
   serverTimestamp,
   orderBy,
-  limit,
+  limit
 } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
 document.addEventListener("DOMContentLoaded", () => {
