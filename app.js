@@ -124,7 +124,7 @@ async function showAllResults() {
   });
 
   if (Object.values(maruUsers).some(arr => arr.length >= MAX)) {
-    if (status) status.textContent = "満席となった会に関しましてはリザーバー枠での参加を募集いたします。";
+    if (status) status.textContent = "満席となった会に関しましてはリザーバー枠での参加を募集いたします。リザーバー希望の方は〇にチェックの上送信お願いします。";
   }
 
   docsArray.forEach(({ id, data }) => {
