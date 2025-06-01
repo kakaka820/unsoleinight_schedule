@@ -596,28 +596,73 @@ async function populateDateFilterOptions() {
     }
 
     // --- ログイン処理 ---
-   document.getElementById("loginBtn").addEventListener("click", async () => {
-  const id = document.getElementById("adminId").value;
+  async function sha256(str) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+document.getElementById("loginBtn").addEventListener("click", async () => {
+  const id = document.getElementById("adminId").value.trim();
   const pw = document.getElementById("adminPw").value;
 
   const msg = document.getElementById("loginMessage");
   msg.textContent = "";
+  msg.style.color = "red";
 
-  if (id === ADMIN_ID && pw === ADMIN_PW) {
+  try {
+    const currentUser = firebase.auth().currentUser;
+
+    if (!currentUser) {
+      msg.textContent = "Firebase匿名認証が必要です。";
+      return;
+    }
+
+    const docRef = firebase.firestore().collection("adminUsers").doc(id);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      msg.textContent = "IDが見つかりません。";
+      return;
+    }
+
+    const data = doc.data();
+
+    // 入力パスワードをSHA-256ハッシュ化
+    const hashedPw = await sha256(pw);
+
+    if (data.password !== hashedPw) {
+      msg.textContent = "パスワードが間違っています。";
+      return;
+    }
+
+    if (data.uid !== currentUser.uid) {
+      msg.textContent = "ユーザー認証に失敗しました。管理者に連絡してください。";
+      return;
+    }
+
+    // ✅ 認証成功 → 管理画面へ
     currentUserId = id;
-    currentUid = "admin";  // 固定でもOK。将来 Firebase Auth 使うなら UID に変える。
+    currentUid = currentUser.uid;
+
     document.getElementById("loginSection").classList.add("hidden");
     document.getElementById("adminSection").classList.remove("hidden");
+
     await displayMaxCapacity();
     await displayDates();
-    await populateDateFilterOptions(); 
+    await populateDateFilterOptions();
     const logs = await fetchLogs();
     renderLogs(logs);
-  } else {
-    msg.textContent = "IDまたはパスワードが違います。";
-    msg.style.color = "red";
+
+  } catch (error) {
+    console.error("ログイン中にエラー:", error);
+    msg.textContent = "ログイン処理中にエラーが発生しました。";
   }
 });
+
 
 
     // --- 初期化 ---
