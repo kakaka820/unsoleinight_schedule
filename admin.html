@@ -260,8 +260,41 @@ let currentUid = "";
 
 
     // 管理者認証情報（仮）
-    const ADMIN_ID = "admin";
-    const ADMIN_PW = "password";
+  document.getElementById("loginBtn").addEventListener("click", async () => {
+  const id = document.getElementById("adminId").value.trim();
+  const pw = document.getElementById("adminPw").value.trim();
+  const loginMessage = document.getElementById("loginMessage");
+
+  if (!id || !pw) {
+    loginMessage.textContent = "IDとパスワードを入力してください。";
+    return;
+  }
+
+  try {
+    const hashedPw = await sha256(pw);
+    const docRef = db.collection("adminUsers").doc(id);
+    const docSnap = await docRef.get();
+    if (!docSnap.exists) {
+      loginMessage.textContent = "ユーザーが見つかりません。";
+      return;
+    }
+
+    const data = docSnap.data();
+    if (data.password !== hashedPw) {
+      loginMessage.textContent = "パスワードが違います。";
+      return;
+    }
+
+    // ✅ ログイン成功！
+    loginMessage.textContent = "";
+    document.getElementById("loginSection").classList.add("hidden");
+    document.getElementById("adminSection").classList.remove("hidden");
+  } catch (err) {
+    console.error("ログインエラー:", err);
+    loginMessage.textContent = "ログイン中にエラーが発生しました。";
+  }
+});
+
 
     // --- 定員管理 ---
 
