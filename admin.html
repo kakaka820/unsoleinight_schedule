@@ -625,6 +625,7 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
     }
 
     const data = doc.data();
+    const uidFromDb = data.uid; 
 
     // 入力パスワードをSHA-256ハッシュ化
     const hashedPw = await sha256(pw);
@@ -633,12 +634,11 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
       msg.textContent = "パスワードが間違っています。";
       return;
     }
-const uidFromDb = data.uid; // FirestoreのUID
-    const currentUserUid = id; // ログイン時のIDを使って、adminUsersコレクションのuidを取得して照合
-    if (uidFromDb !== currentUserUid) {
-      msg.textContent = "認証に失敗しました。管理者に連絡してください。";
-      return;
-    }
+    
+if (uidFromDb !== id) {  // ここでidとuidFromDbを比較
+  msg.textContent = "認証に失敗しました。管理者に連絡してください。";
+  return;
+}
 
     // ✅ 認証成功 → 管理画面へ
     currentUserId = id;
