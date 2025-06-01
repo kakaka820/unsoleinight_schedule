@@ -240,6 +240,7 @@ UID以外の問題は解決済。UIDに関しては、今はUIDがそもそもfi
  </div>
   <!-- Firebase SDK (v9 compat版) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 
   <script>
@@ -617,7 +618,7 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
     const currentUser = firebase.auth().currentUser;
 
     if (!currentUser) {
-      msg.textContent = "Firebase匿名認証が必要です。";
+      msg.textContent = "認証が必要です。";
       return;
     }
 
