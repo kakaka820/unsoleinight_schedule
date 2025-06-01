@@ -110,65 +110,52 @@ async function showAllResults() {
   window.users = {};
   dates.forEach(date => { maruUsers[date] = []; });
 
-docsArray.forEach(({ id, data }) => {
-  window.users[id] = data;
-  const a = data.answers || {};  // 空のオブジェクトをセット
-  dates.forEach(date => {
-    if (a[date] === "〇") maruUsers[date].push(id);
-  });
-});
-
-dates.forEach(date => {
-  highlighted[date] = maruUsers[date].length >= MAX ? maruUsers[date].slice(0, MAX) : [];
-});
-
-if (Object.values(maruUsers).some(arr => arr.length >= MAX)) {
-  if (status) status.textContent = "満席となった会に関しましてはリザーバー枠での参加を募集いたします。リザーバー希望の方は〇にチェックの上送信お願いします。";
-}
-
-docsArray.forEach(({ id, data }) => {
-  const a = data.answers || {};  // 空のオブジェクトをセット
-  const c = data.comment || "";  // コメントが無ければ空文字
-
-  // answers と comment が両方とも空の場合は除外
-  if (Object.values(a).every(val => val === "") && !c) return;
-
-  const row = document.createElement("tr");
-  const idCell = document.createElement("td");
-  idCell.textContent = id;
-  row.appendChild(idCell);
-
-  dates.forEach(date => {
-    const cell = document.createElement("td");
-    const answer = a[date] || "";  // 空文字の場合もある
-    const isOverCapacity = maruUsers[date].length > MAX;
-    const isReserve = isOverCapacity && maruUsers[date].includes(id) && !highlighted[date].includes(id);
-
-    // answerが空ならばそのセルをスキップ
-    if (answer === "") {
-      cell.textContent = "未回答";  // 「未回答」と表示
-    } else {
-      if (highlighted[date]?.includes(id)) {
-        cell.classList.add("highlight");  // ハイライト処理
-      }
-      if (answer === "〇" && isReserve) {
-        cell.textContent = "リザーバー";
-      } else {
-        cell.textContent = answer;
-      }
-    }
-
-    row.appendChild(cell);
+  docsArray.forEach(({ id, data }) => {
+    window.users[id] = data;
+    const a = data.answers || {};
+    dates.forEach(date => {
+      if (a[date] === "〇") maruUsers[date].push(id);
+    });
   });
 
-  // コメントがあれば表示
-  const commentCell = document.createElement("td");
-  commentCell.textContent = c;
-  row.appendChild(commentCell);
+ 
+  dates.forEach(date => {
+    highlighted[date] = maruUsers[date].length >= MAX ? maruUsers[date].slice(0, MAX) : [];
+  });
 
-  tbody.appendChild(row);  // 行をtbodyに追加
-});
+  if (Object.values(maruUsers).some(arr => arr.length >= MAX)) {
+    if (status) status.textContent = "満席となった会に関しましてはリザーバー枠での参加を募集いたします。";
+  }
 
+  docsArray.forEach(({ id, data }) => {
+    const a = data.answers || {};
+    const c = data.comment || "";
+    if (!Object.keys(a).length && !c) return;
+
+    const row = document.createElement("tr");
+    const idCell = document.createElement("td");
+    idCell.textContent = id;
+    row.appendChild(idCell);
+
+    dates.forEach(date => {
+      const cell = document.createElement("td");
+      const answer = a[date] || "";
+      const isOverCapacity = maruUsers[date].length > MAX;
+const isReserve = isOverCapacity && maruUsers[date].includes(id) && !highlighted[date].includes(id);
+      if (highlighted[date]?.includes(id)) {cell.classList.add("highlight");}
+     if (answer === "〇" && isReserve) {
+    cell.textContent = "リザーバー";
+  } else {
+    cell.textContent = answer;
+  }
+      row.appendChild(cell);
+    });
+
+    const commentCell = document.createElement("td");
+    commentCell.textContent = c;
+    row.appendChild(commentCell);
+    tbody.appendChild(row);
+  });
 
 // フォームの日付セルもハイライト
 const formRows = document.querySelectorAll("#form-body tr");
@@ -207,21 +194,13 @@ window.login = async function () {
       document.getElementById("welcomeMsg").textContent = `${id} さんとしてログイン中`;
 // 匿名認証でログインして uid を取得し、users/{id} に保存
 try {
- const userCredential = await signInAnonymously(auth);
-const uid = userCredential.user.uid;
-console.log("UID取得成功", uid);
-
-// window.usersの中でUIDを一元管理する
-if (!window.users[window.currentUser]) {
-  window.users[window.currentUser] = {};
-}
-window.users[window.currentUser].uid = uid;  // UIDをusersオブジェクトに格納
-console.log("window.usersにUID保存成功:", uid);
-
-// UIDをFirestoreにも保存
-const userRef = doc(db, "users", id);
-await setDoc(userRef, { uid }, { merge: true });  // uidだけを追記保存
-console.log("UIDFirestore保存成功:", uid);
+  const userCredential = await signInAnonymously(auth);
+  const uid = userCredential.user.uid;
+  window.uid = uid;
+  console.log("UID取得成功", uid);
+  const userRef = doc(db, "users", id);
+  await setDoc(userRef, { uid }, { merge: true });  // uidだけを追記保存
+  console.log("UID保存成功:", uid);
 } catch (error) {
   console.error("UID保存失敗:", error);
 }
@@ -347,4 +326,3 @@ document.addEventListener('keydown', function(event) {
     }
   }
 });
-
