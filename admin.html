@@ -615,12 +615,6 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
   msg.style.color = "red";
 
   try {
-    const currentUser = firebase.auth().currentUser;
-
-    if (!currentUser) {
-      msg.textContent = "認証が必要です。";
-      return;
-    }
 
     const docRef = firebase.firestore().collection("adminUsers").doc(id);
     const doc = await docRef.get();
