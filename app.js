@@ -110,26 +110,25 @@ async function showAllResults() {
   window.users = {};
   dates.forEach(date => { maruUsers[date] = []; });
 
-  docsArray.forEach(({ id, data }) => {
-    window.users[id] = data;
-    const a = data.answers || {};
-    dates.forEach(date => {
-      if (a[date] === "〇") maruUsers[date].push(id);
-    });
-  });
-
- 
+docsArray.forEach(({ id, data }) => {
+  window.users[id] = data;
+  const a = data.answers || {};  // 空のオブジェクトをセット
   dates.forEach(date => {
-    highlighted[date] = maruUsers[date].length >= MAX ? maruUsers[date].slice(0, MAX) : [];
+    if (a[date] === "〇") maruUsers[date].push(id);
   });
+});
 
-  if (Object.values(maruUsers).some(arr => arr.length >= MAX)) {
-    if (status) status.textContent = "満席となった会に関しましてはリザーバー枠での参加を募集いたします。リザーバー希望の方は〇にチェックの上送信お願いします。";
-  }
+dates.forEach(date => {
+  highlighted[date] = maruUsers[date].length >= MAX ? maruUsers[date].slice(0, MAX) : [];
+});
 
-  docsArray.forEach(({ id, data }) => {
-  const a = data.answers || {};
-  const c = data.comment || "";
+if (Object.values(maruUsers).some(arr => arr.length >= MAX)) {
+  if (status) status.textContent = "満席となった会に関しましてはリザーバー枠での参加を募集いたします。リザーバー希望の方は〇にチェックの上送信お願いします。";
+}
+
+docsArray.forEach(({ id, data }) => {
+  const a = data.answers || {};  // 空のオブジェクトをセット
+  const c = data.comment || "";  // コメントが無ければ空文字
 
   // answers と comment が両方とも空の場合は除外
   if (Object.values(a).every(val => val === "") && !c) return;
@@ -144,56 +143,32 @@ async function showAllResults() {
     const answer = a[date] || "";  // 空文字の場合もある
     const isOverCapacity = maruUsers[date].length > MAX;
     const isReserve = isOverCapacity && maruUsers[date].includes(id) && !highlighted[date].includes(id);
-    
-    // answerが空ならばその行はスキップ
-  if (answer === "") {
-    return;  // この行を非表示にしたい場合はここで処理を中断
-  }
 
-  if (highlighted[date]?.includes(id)) {
-    cell.classList.add("highlight");
-  }
+    // answerが空ならばそのセルをスキップ
+    if (answer === "") {
+      cell.textContent = "未回答";  // 「未回答」と表示
+    } else {
+      if (highlighted[date]?.includes(id)) {
+        cell.classList.add("highlight");  // ハイライト処理
+      }
+      if (answer === "〇" && isReserve) {
+        cell.textContent = "リザーバー";
+      } else {
+        cell.textContent = answer;
+      }
+    }
 
-  if (answer === "〇" && isReserve) {
-    cell.textContent = "リザーバー";
-  } else {
-    cell.textContent = answer;
-  }
+    row.appendChild(cell);
+  });
 
-  row.appendChild(cell);
+  // コメントがあれば表示
+  const commentCell = document.createElement("td");
+  commentCell.textContent = c;
+  row.appendChild(commentCell);
+
+  tbody.appendChild(row);  // 行をtbodyに追加
 });
 
-const commentCell = document.createElement("td");
-commentCell.textContent = c;
-row.appendChild(commentCell);
-tbody.appendChild(row);
-
-
-
-    const row = document.createElement("tr");
-    const idCell = document.createElement("td");
-    idCell.textContent = id;
-    row.appendChild(idCell);
-
-    dates.forEach(date => {
-      const cell = document.createElement("td");
-      const answer = a[date] || "";
-      const isOverCapacity = maruUsers[date].length > MAX;
-const isReserve = isOverCapacity && maruUsers[date].includes(id) && !highlighted[date].includes(id);
-      if (highlighted[date]?.includes(id)) {cell.classList.add("highlight");}
-     if (answer === "〇" && isReserve) {
-    cell.textContent = "リザーバー";
-  } else {
-    cell.textContent = answer;
-  }
-      row.appendChild(cell);
-    });
-
-    const commentCell = document.createElement("td");
-    commentCell.textContent = c;
-    row.appendChild(commentCell);
-    tbody.appendChild(row);
-  });
 
 // フォームの日付セルもハイライト
 const formRows = document.querySelectorAll("#form-body tr");
