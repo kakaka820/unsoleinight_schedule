@@ -294,17 +294,21 @@ let currentUid = "";
     }
 
     // ✅ ログイン成功！
+     try {
     loginMessage.textContent = "";
     document.getElementById("loginSection").classList.add("hidden");
     document.getElementById("adminSection").classList.remove("hidden");
-  }await displayMaxCapacity();
-await displayDates();
-await fetchLogs().then(renderLogs);
-await populateDateFilterOptions();catch (err) {
+
+    await displayMaxCapacity();
+    await displayDates();
+    await fetchLogs().then(renderLogs);
+    await populateDateFilterOptions();
+  } catch (err) {
     console.error("ログインエラー:", err);
     loginMessage.textContent = "ログイン中にエラーが発生しました。";
   }
 });
+
 
 
     // --- 定員管理 ---
