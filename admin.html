@@ -297,7 +297,10 @@ let currentUid = "";
     loginMessage.textContent = "";
     document.getElementById("loginSection").classList.add("hidden");
     document.getElementById("adminSection").classList.remove("hidden");
-  } catch (err) {
+  }await displayMaxCapacity();
+await displayDates();
+await fetchLogs().then(renderLogs);
+await populateDateFilterOptions();catch (err) {
     console.error("ログインエラー:", err);
     loginMessage.textContent = "ログイン中にエラーが発生しました。";
   }
