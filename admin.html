@@ -597,7 +597,8 @@ async function populateDateFilterOptions() {
     }
 
     // --- ログイン処理 ---
-  async function sha256(str) {
+ // --- ログイン処理 ---
+async function sha256(str) {
   const encoder = new TextEncoder();
   const data = encoder.encode(str);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
@@ -609,17 +610,15 @@ async function populateDateFilterOptions() {
 document.getElementById("loginBtn").addEventListener("click", async () => {
   const id = document.getElementById("adminId").value.trim();
   const pw = document.getElementById("adminPw").value;
+  
   // 今アクセスしている匿名ユーザーのUIDを取得する
-const anonymousUid = firebase.auth().currentUser?.uid;
-  // Firestoreから取得したuidと照合
-const uidFromDb = data.uid;
+  const anonymousUid = firebase.auth().currentUser?.uid;
 
   const msg = document.getElementById("loginMessage");
   msg.textContent = "";
   msg.style.color = "red";
 
   try {
-
     const docRef = firebase.firestore().collection("adminUsers").doc(id);
     const doc = await docRef.get();
 
@@ -628,6 +627,8 @@ const uidFromDb = data.uid;
       return;
     }
 
+    const data = doc.data();  // Firestoreから取得したデータ
+    const uidFromDb = data?.uid;  // その中のuidを取り出す
 
     // 入力パスワードをSHA-256ハッシュ化
     const hashedPw = await sha256(pw);
@@ -636,16 +637,16 @@ const uidFromDb = data.uid;
       msg.textContent = "パスワードが間違っています。";
       return;
     }
-     const data = doc.data();
-    const uidFromDb = data.uid; 
-if (uidFromDb !== anonymousUid) {
-  msg.textContent = "認証に失敗しました。管理者に連絡してください。";
-  return;
-}
+
+    // uidFromDb（データベース内のuid）と匿名ユーザーのuidを比較
+    if (uidFromDb !== anonymousUid) {
+      msg.textContent = "認証に失敗しました。管理者に連絡してください。";
+      return;
+    }
 
     // ✅ 認証成功 → 管理画面へ
     currentUserId = id;
-    currentUid = currentUser.uid;
+    currentUid = anonymousUid; // この時点で、匿名ユーザーのuidを使用
 
     document.getElementById("loginSection").classList.add("hidden");
     document.getElementById("adminSection").classList.remove("hidden");
@@ -661,6 +662,7 @@ if (uidFromDb !== anonymousUid) {
     msg.textContent = "ログイン処理中にエラーが発生しました。";
   }
 });
+
 
 
 
