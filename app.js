@@ -194,13 +194,21 @@ window.login = async function () {
       document.getElementById("welcomeMsg").textContent = `${id} さんとしてログイン中`;
 // 匿名認証でログインして uid を取得し、users/{id} に保存
 try {
-  const userCredential = await signInAnonymously(auth);
-  const uid = userCredential.user.uid;
-  window.uid = uid;
-  console.log("UID取得成功", uid);
-  const userRef = doc(db, "users", id);
-  await setDoc(userRef, { uid }, { merge: true });  // uidだけを追記保存
-  console.log("UID保存成功:", uid);
+ const userCredential = await signInAnonymously(auth);
+const uid = userCredential.user.uid;
+console.log("UID取得成功", uid);
+
+// window.usersの中でUIDを一元管理する
+if (!window.users[window.currentUser]) {
+  window.users[window.currentUser] = {};
+}
+window.users[window.currentUser].uid = uid;  // UIDをusersオブジェクトに格納
+console.log("window.usersにUID保存成功:", uid);
+
+// UIDをFirestoreにも保存
+const userRef = doc(db, "users", id);
+await setDoc(userRef, { uid }, { merge: true });  // uidだけを追記保存
+console.log("UIDFirestore保存成功:", uid);
 } catch (error) {
   console.error("UID保存失敗:", error);
 }
