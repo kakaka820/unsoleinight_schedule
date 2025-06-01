@@ -609,6 +609,10 @@ async function populateDateFilterOptions() {
 document.getElementById("loginBtn").addEventListener("click", async () => {
   const id = document.getElementById("adminId").value.trim();
   const pw = document.getElementById("adminPw").value;
+  // 今アクセスしている匿名ユーザーのUIDを取得する
+const anonymousUid = firebase.auth().currentUser?.uid;
+  // Firestoreから取得したuidと照合
+const uidFromDb = data.uid;
 
   const msg = document.getElementById("loginMessage");
   msg.textContent = "";
@@ -635,7 +639,7 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
       return;
     }
     
-if (uidFromDb !== id) {  // ここでidとuidFromDbを比較
+if (uidFromDb !== anonymousUid) {
   msg.textContent = "認証に失敗しました。管理者に連絡してください。";
   return;
 }
