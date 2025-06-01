@@ -260,57 +260,8 @@ let currentUid = "";
 
 
     // 管理者認証情報（仮）
-     async function sha256(message) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(message);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-  return hashHex;
-}
-  document.getElementById("loginBtn").addEventListener("click", async () => {
-  const id = document.getElementById("adminId").value.trim();
-  const pw = document.getElementById("adminPw").value.trim();
-  const loginMessage = document.getElementById("loginMessage");
-
-  if (!id || !pw) {
-    loginMessage.textContent = "IDとパスワードを入力してください。";
-    return;
-  }
-
-  try {
-    const hashedPw = await sha256(pw);
-    const docRef = db.collection("adminUsers").doc(id);
-    const docSnap = await docRef.get();
-    if (!docSnap.exists) {
-      loginMessage.textContent = "ユーザーが見つかりません。";
-      return;
-    }
-
-    const data = docSnap.data();
-    if (data.password !== hashedPw) {
-      loginMessage.textContent = "パスワードが違います。";
-      return;
-    }
-
-    // ✅ ログイン成功！
-    // ログイン成功時の処理
-try {
-  loginMessage.textContent = "";
-  document.getElementById("loginSection").classList.add("hidden");
-  document.getElementById("adminSection").classList.remove("hidden");
-
-  await displayMaxCapacity();
-  await displayDates();
-  await fetchLogs().then(renderLogs);
-  await populateDateFilterOptions();
-} catch (err) {
-  console.error("ログインエラー:", err);
-  loginMessage.textContent = "ログイン中にエラーが発生しました。";
-}
-
-
-
+    const ADMIN_ID = "admin";
+    const ADMIN_PW = "password";
 
     // --- 定員管理 ---
 
@@ -643,47 +594,30 @@ async function populateDateFilterOptions() {
   }
       loadLogs();
     }
-// --- ログイン処理 --- --
-   
-document.getElementById("loginBtn").addEventListener("click", async () => {
-    const id = document.getElementById("adminId").value;
-    const pw = document.getElementById("adminPw").value;
 
-    const msg = document.getElementById("loginMessage");
-    msg.textContent = "";
+    // --- ログイン処理 ---
+   document.getElementById("loginBtn").addEventListener("click", async () => {
+  const id = document.getElementById("adminId").value;
+  const pw = document.getElementById("adminPw").value;
 
-    try {
-      const q = await db.collection("adminUsers")
-        .where("id", "==", id)
-        .where("password", "==", pw)
-        .get();
+  const msg = document.getElementById("loginMessage");
+  msg.textContent = "";
 
-      if (!q.empty) {
-        const userDoc = q.docs[0];
-        const userData = userDoc.data();
-
-        currentUserId = id;
-        currentUid = userDoc.id;
-
-        document.getElementById("loginSection").classList.add("hidden");
-        document.getElementById("adminSection").classList.remove("hidden");
-
-        await displayMaxCapacity();
-        await displayDates();
-        await populateDateFilterOptions();
-
-        const logs = await fetchLogs();
-        renderLogs(logs);
-      } else {
-        msg.textContent = "IDまたはパスワードが違います。";
-        msg.style.color = "red";
-      }
-    } catch (error) {
-      console.error("ログイン中にエラー:", error);
-      msg.textContent = "ログインに失敗しました。";
-      msg.style.color = "red";
-    }
-  });
+  if (id === ADMIN_ID && pw === ADMIN_PW) {
+    currentUserId = id;
+    currentUid = "admin";  // 固定でもOK。将来 Firebase Auth 使うなら UID に変える。
+    document.getElementById("loginSection").classList.add("hidden");
+    document.getElementById("adminSection").classList.remove("hidden");
+    await displayMaxCapacity();
+    await displayDates();
+    await populateDateFilterOptions(); 
+    const logs = await fetchLogs();
+    renderLogs(logs);
+  } else {
+    msg.textContent = "IDまたはパスワードが違います。";
+    msg.style.color = "red";
+  }
+});
 
 
     // --- 初期化 ---
@@ -716,6 +650,7 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
 
     document.getElementById("applyFilterBtn").addEventListener("click", applyFilter);
     document.getElementById("clearFilterBtn").addEventListener("click", clearFilter);
+  </script>
 
 </body>
 </html>
