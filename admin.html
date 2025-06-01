@@ -628,7 +628,6 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
     }
 
     const data = doc.data();  // Firestoreから取得したデータ
-    const uidFromDb = data?.uid;  // その中のuidを取り出す
 
     // 入力パスワードをSHA-256ハッシュ化
     const hashedPw = await sha256(pw);
@@ -638,15 +637,9 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
       return;
     }
 
-    // uidFromDb（データベース内のuid）と匿名ユーザーのuidを比較
-    if (uidFromDb !== anonymousUid) {
-      msg.textContent = "認証に失敗しました。管理者に連絡してください。";
-      return;
-    }
 
     // ✅ 認証成功 → 管理画面へ
     currentUserId = id;
-    currentUid = anonymousUid; // この時点で、匿名ユーザーのuidを使用
 
     document.getElementById("loginSection").classList.add("hidden");
     document.getElementById("adminSection").classList.remove("hidden");
