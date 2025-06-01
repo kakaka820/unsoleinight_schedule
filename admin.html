@@ -628,8 +628,6 @@ const uidFromDb = data.uid;
       return;
     }
 
-    const data = doc.data();
-    const uidFromDb = data.uid; 
 
     // 入力パスワードをSHA-256ハッシュ化
     const hashedPw = await sha256(pw);
@@ -638,7 +636,8 @@ const uidFromDb = data.uid;
       msg.textContent = "パスワードが間違っています。";
       return;
     }
-    
+     const data = doc.data();
+    const uidFromDb = data.uid; 
 if (uidFromDb !== anonymousUid) {
   msg.textContent = "認証に失敗しました。管理者に連絡してください。";
   return;
