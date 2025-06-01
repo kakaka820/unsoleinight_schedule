@@ -645,47 +645,45 @@ async function populateDateFilterOptions() {
     }
 // --- ログイン処理 --- --
    
- import { collection, query, where, getDocs } from "firebase/firestore";
-
 document.getElementById("loginBtn").addEventListener("click", async () => {
-  const id = document.getElementById("adminId").value;
-  const pw = document.getElementById("adminPw").value;
+    const id = document.getElementById("adminId").value;
+    const pw = document.getElementById("adminPw").value;
 
-  const msg = document.getElementById("loginMessage");
-  msg.textContent = "";
+    const msg = document.getElementById("loginMessage");
+    msg.textContent = "";
 
-  try {
-    const q = query(
-      collection(db, "adminUsers"), // ← adminUsers コレクションを参照
-      where("id", "==", id),
-      where("password", "==", pw)
-    );
+    try {
+      const q = await db.collection("adminUsers")
+        .where("id", "==", id)
+        .where("password", "==", pw)
+        .get();
 
-    const querySnapshot = await getDocs(q);
+      if (!q.empty) {
+        const userDoc = q.docs[0];
+        const userData = userDoc.data();
 
-    if (!querySnapshot.empty) {
-      const userDoc = querySnapshot.docs[0];
-      const userData = userDoc.data();
+        currentUserId = id;
+        currentUid = userDoc.id;
 
-      currentUserId = id;
-      currentUid = userDoc.id; // ドキュメントIDをUIDとして扱う場合
-      document.getElementById("loginSection").classList.add("hidden");
-      document.getElementById("adminSection").classList.remove("hidden");
-      await displayMaxCapacity();
-      await displayDates();
-      await populateDateFilterOptions();
-      const logs = await fetchLogs();
-      renderLogs(logs);
-    } else {
-      msg.textContent = "IDまたはパスワードが違います。";
+        document.getElementById("loginSection").classList.add("hidden");
+        document.getElementById("adminSection").classList.remove("hidden");
+
+        await displayMaxCapacity();
+        await displayDates();
+        await populateDateFilterOptions();
+
+        const logs = await fetchLogs();
+        renderLogs(logs);
+      } else {
+        msg.textContent = "IDまたはパスワードが違います。";
+        msg.style.color = "red";
+      }
+    } catch (error) {
+      console.error("ログイン中にエラー:", error);
+      msg.textContent = "ログインに失敗しました。";
       msg.style.color = "red";
     }
-  } catch (error) {
-    console.error("ログイン中にエラー:", error);
-    msg.textContent = "ログインに失敗しました。";
-    msg.style.color = "red";
-  }
-});
+  });
 
 
     // --- 初期化 ---
