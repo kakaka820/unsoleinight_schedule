@@ -637,28 +637,48 @@ async function populateDateFilterOptions() {
     }
 
     // --- ログイン処理 ---
-   document.getElementById("loginBtn").addEventListener("click", async () => {
+ import { collection, query, where, getDocs } from "firebase/firestore";
+
+document.getElementById("loginBtn").addEventListener("click", async () => {
   const id = document.getElementById("adminId").value;
   const pw = document.getElementById("adminPw").value;
 
   const msg = document.getElementById("loginMessage");
   msg.textContent = "";
 
-  if (id === ADMIN_ID && pw === ADMIN_PW) {
-    currentUserId = id;
-    currentUid = "admin";  // 固定でもOK。将来 Firebase Auth 使うなら UID に変える。
-    document.getElementById("loginSection").classList.add("hidden");
-    document.getElementById("adminSection").classList.remove("hidden");
-    await displayMaxCapacity();
-    await displayDates();
-    await populateDateFilterOptions(); 
-    const logs = await fetchLogs();
-    renderLogs(logs);
-  } else {
-    msg.textContent = "IDまたはパスワードが違います。";
+  try {
+    const q = query(
+      collection(db, "adminUsers"), // ← adminUsers コレクションを参照
+      where("id", "==", id),
+      where("password", "==", pw)
+    );
+
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      const userDoc = querySnapshot.docs[0];
+      const userData = userDoc.data();
+
+      currentUserId = id;
+      currentUid = userDoc.id; // ドキュメントIDをUIDとして扱う場合
+      document.getElementById("loginSection").classList.add("hidden");
+      document.getElementById("adminSection").classList.remove("hidden");
+      await displayMaxCapacity();
+      await displayDates();
+      await populateDateFilterOptions();
+      const logs = await fetchLogs();
+      renderLogs(logs);
+    } else {
+      msg.textContent = "IDまたはパスワードが違います。";
+      msg.style.color = "red";
+    }
+  } catch (error) {
+    console.error("ログイン中にエラー:", error);
+    msg.textContent = "ログインに失敗しました。";
     msg.style.color = "red";
   }
 });
+
 
 
     // --- 初期化 ---
