@@ -145,30 +145,28 @@ async function showAllResults() {
     const isOverCapacity = maruUsers[date].length > MAX;
     const isReserve = isOverCapacity && maruUsers[date].includes(id) && !highlighted[date].includes(id);
     
-    if (answer === "") {
-      cell.textContent = "未回答";  // 空文字の場合は「未回答」と表示
-      row.appendChild(cell);
-      return;  // 以降の処理をスキップ
-    }
+    // answerが空ならばその行はスキップ
+  if (answer === "") {
+    return;  // この行を非表示にしたい場合はここで処理を中断
+  }
 
-    if (highlighted[date]?.includes(id)) {
-      cell.classList.add("highlight");
-    }
+  if (highlighted[date]?.includes(id)) {
+    cell.classList.add("highlight");
+  }
 
-    if (answer === "〇" && isReserve) {
-      cell.textContent = "リザーバー";
-    } else {
-      cell.textContent = answer;
-    }
+  if (answer === "〇" && isReserve) {
+    cell.textContent = "リザーバー";
+  } else {
+    cell.textContent = answer;
+  }
 
-    row.appendChild(cell);
-  });
-
-  const commentCell = document.createElement("td");
-  commentCell.textContent = c;
-  row.appendChild(commentCell);
-  tbody.appendChild(row);
+  row.appendChild(cell);
 });
+
+const commentCell = document.createElement("td");
+commentCell.textContent = c;
+row.appendChild(commentCell);
+tbody.appendChild(row);
 
 
 
