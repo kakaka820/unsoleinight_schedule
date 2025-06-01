@@ -645,6 +645,7 @@ async function populateDateFilterOptions() {
     }
 
     // --- ログイン処理 ---
+    <script type="module">
  import { collection, query, where, getDocs } from "firebase/firestore";
 
 document.getElementById("loginBtn").addEventListener("click", async () => {
@@ -686,7 +687,7 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
     msg.style.color = "red";
   }
 });
-
+</script>
 
 
     // --- 初期化 ---
