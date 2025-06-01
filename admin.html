@@ -260,6 +260,14 @@ let currentUid = "";
 
 
     // 管理者認証情報（仮）
+     async function sha256(message) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(message);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+  return hashHex;
+}
   document.getElementById("loginBtn").addEventListener("click", async () => {
   const id = document.getElementById("adminId").value.trim();
   const pw = document.getElementById("adminPw").value.trim();
@@ -272,15 +280,6 @@ let currentUid = "";
 
   try {
     const hashedPw = await sha256(pw);
-    async function sha256(message) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(message);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-  return hashHex;
-}
-
     const docRef = db.collection("adminUsers").doc(id);
     const docSnap = await docRef.get();
     if (!docSnap.exists) {
