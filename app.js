@@ -130,7 +130,7 @@ async function showAllResults() {
   docsArray.forEach(({ id, data }) => {
     const a = data.answers || {};
     const c = data.comment || "";
-    if (!Object.keys(a).length && !c) return;
+    if ((Object.keys(a).length === 0 || !a) && (!c || c.trim() === "")) return;
 
     const row = document.createElement("tr");
     const idCell = document.createElement("td");
