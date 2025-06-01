@@ -128,9 +128,48 @@ async function showAllResults() {
   }
 
   docsArray.forEach(({ id, data }) => {
-    const a = data.answers || {};
-    const c = data.comment || "";
-   if ((typeof a === 'object' && Object.keys(a).length === 0) || a === "") return;
+  const a = data.answers || {};
+  const c = data.comment || "";
+
+  // answers と comment が両方とも空の場合は除外
+  if (Object.values(a).every(val => val === "") && !c) return;
+
+  const row = document.createElement("tr");
+  const idCell = document.createElement("td");
+  idCell.textContent = id;
+  row.appendChild(idCell);
+
+  dates.forEach(date => {
+    const cell = document.createElement("td");
+    const answer = a[date] || "";  // 空文字の場合もある
+    const isOverCapacity = maruUsers[date].length > MAX;
+    const isReserve = isOverCapacity && maruUsers[date].includes(id) && !highlighted[date].includes(id);
+    
+    if (answer === "") {
+      cell.textContent = "未回答";  // 空文字の場合は「未回答」と表示
+      row.appendChild(cell);
+      return;  // 以降の処理をスキップ
+    }
+
+    if (highlighted[date]?.includes(id)) {
+      cell.classList.add("highlight");
+    }
+
+    if (answer === "〇" && isReserve) {
+      cell.textContent = "リザーバー";
+    } else {
+      cell.textContent = answer;
+    }
+
+    row.appendChild(cell);
+  });
+
+  const commentCell = document.createElement("td");
+  commentCell.textContent = c;
+  row.appendChild(commentCell);
+  tbody.appendChild(row);
+});
+
 
 
     const row = document.createElement("tr");
