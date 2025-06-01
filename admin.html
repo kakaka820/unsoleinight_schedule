@@ -633,8 +633,9 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
       msg.textContent = "パスワードが間違っています。";
       return;
     }
-
-    if (data.uid !== currentUser.uid) {
+const uidFromDb = data.uid; // FirestoreのUID
+    const currentUserUid = id; // ログイン時のIDを使って、adminUsersコレクションのuidを取得して照合
+    if (uidFromDb !== currentUserUid) {
       msg.textContent = "認証に失敗しました。管理者に連絡してください。";
       return;
     }
