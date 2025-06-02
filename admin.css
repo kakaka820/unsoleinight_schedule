@@ -14,9 +14,10 @@ body {
 hr{
       margin:40px 0;
 }
-    .hidden {
-      display: none;
-    }
+   .hidden {
+  display: none !important;
+}
+
     .container {
       background: #fff;
       padding: 20px 24px;
