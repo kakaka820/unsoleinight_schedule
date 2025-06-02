@@ -592,7 +592,6 @@ async function populateDateFilterOptions() {
     }
 
     // --- ログイン処理 ---
- // --- ログイン処理 ---
 async function sha256(str) {
   const encoder = new TextEncoder();
   const data = encoder.encode(str);
@@ -632,6 +631,11 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
       return;
     }
 
+    // FirestoreのUIDと匿名ユーザーのUIDを照合
+    if (data.uid !== anonymousUid) {
+      msg.textContent = "管理者権限がありません。";
+      return;
+    }
 
     // ✅ 認証成功 → 管理画面へ
     currentUserId = id;
@@ -650,8 +654,6 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
     msg.textContent = "ログイン処理中にエラーが発生しました。";
   }
 });
-
-
 
 
     // --- 初期化 ---
