@@ -617,7 +617,7 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
     const doc = await docRef.get();
 
     if (!doc.exists) {
-      msg.textContent = "IDが見つかりません。";
+      msg.textContent = "管理者に連絡してください（エラーコード：200）";
       return;
     }
 
@@ -633,7 +633,7 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
 
     // FirestoreのUIDと匿名ユーザーのUIDを照合
     if (data.uid !== anonymousUid) {
-      msg.textContent = "管理者権限がありません。";
+      msg.textContent = "管理者に連絡してください（エラーコード：201）";
       return;
     }
 
