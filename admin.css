@@ -10,6 +10,10 @@ body {
       text-align: center;
       color: #222;
     }
+
+hr{
+      margin:40px 0;
+}
     .hidden {
       display: none;
     }
