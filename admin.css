@@ -89,6 +89,11 @@ hr{
       font-weight: 600;
       text-align: center;
     }
+.log-table-wrapper {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
     ul {
       padding-left: 24px;
       margin-top: 12px;
