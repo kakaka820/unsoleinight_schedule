@@ -591,7 +591,7 @@ async function populateDateFilterOptions() {
       loadLogs();
     }
 
-    // --- ログイン処理 ---
+   // --- ログイン処理 ---
 async function sha256(str) {
   const encoder = new TextEncoder();
   const data = encoder.encode(str);
@@ -604,9 +604,6 @@ async function sha256(str) {
 document.getElementById("loginBtn").addEventListener("click", async () => {
   const id = document.getElementById("adminId").value.trim();
   const pw = document.getElementById("adminPw").value;
-  
-  // 今アクセスしている匿名ユーザーのUIDを取得する
-  const anonymousUid = firebase.auth().currentUser?.uid;
 
   const msg = document.getElementById("loginMessage");
   msg.textContent = "";
@@ -628,12 +625,6 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
 
     if (data.password !== hashedPw) {
       msg.textContent = "パスワードが間違っています。";
-      return;
-    }
-
-    // FirestoreのUIDと匿名ユーザーのUIDを照合
-    if (data.uid !== anonymousUid) {
-      msg.textContent = "管理者に連絡してください（エラーコード：201）";
       return;
     }
 
