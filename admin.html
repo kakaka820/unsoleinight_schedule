@@ -257,6 +257,7 @@ async function removeDate(dateStr) {
   if (!confirm(`今削除しようとしている日程は「${dateStr}」です。本当に削除しますか？`)) return;
 
   try {
+    //settingsから日程を削除
     await db.collection("settings").doc("eventDates").update({
       list: firebase.firestore.FieldValue.arrayRemove(dateStr)
     });
@@ -269,12 +270,26 @@ async function removeDate(dateStr) {
     // ✅ ここで不要ログをクリーンアップ
     await cleanUpLogs(dateStr);
 
+    // ✅  usersコレクションのanswers.{dateStr} を削除
+    const usersSnapshot = await db.collection("users").get();
+    const batch = db.batch();
+
+    usersSnapshot.forEach((doc) => {
+      const userRef = doc.ref;
+      batch.update(userRef, {
+        [`answers.${dateStr}`]: firebase.firestore.FieldValue.delete()
+      });
+    });
+
+    await batch.commit();
+
   } catch (e) {
     console.error("日程削除失敗:", e);
     msg.textContent = "日程の削除に失敗しました。";
     msg.style.color = "red";
   }
 }
+    
 
 
 // 日程の編集
