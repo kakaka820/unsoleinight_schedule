@@ -276,8 +276,9 @@ async function removeDate(dateStr) {
 
     usersSnapshot.forEach((doc) => {
       const userRef = doc.ref;
+      constnfieldPath = new firebase.firestore.FieldPath("answers",dateStr);
       batch.update(userRef, {
-        [`answers.${dateStr}`]: firebase.firestore.FieldValue.delete()
+        [fieldPath]: firebase.firestore.FieldValue.delete()
       });
     });
 
