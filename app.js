@@ -304,7 +304,7 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
     answers,
     comment,
     updatedAt: serverTimestamp()
-  });
+  });{marge:true});
 
   await showAllResults();
   document.getElementById("submitMessage").textContent = "送信しました！";
