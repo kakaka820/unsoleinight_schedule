@@ -114,7 +114,7 @@ async function showAllResults() {
     window.users[id] = data;
     const a = data.answers || {};
     dates.forEach(date => {
-      if (a[Strings(date)] === "〇") maruUsers[date].push(id);
+      if (a[String(date)] === "〇") maruUsers[date].push(id);
     });
   });
 
@@ -300,7 +300,7 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
 
   await Promise.all(logPromises);
   await setDoc(userRef, {
-    ...window.users[window.currentUser],
+    password:window.users[window.currentUser].password,
     answers,
     comment,
     updatedAt: serverTimestamp()
