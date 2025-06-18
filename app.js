@@ -67,7 +67,7 @@ async function loadPreviousAnswers() {
   const comment = userData.comment || "";
 
   dates.forEach(date => {
-    const selected = answers[String(date)];
+    const selected = answers[date];
     if (selected) {
       const el = document.querySelector(`input[name="response-${date}"][value="${selected}"]`);
       if (el) el.checked = true;
@@ -114,7 +114,7 @@ async function showAllResults() {
     window.users[id] = data;
     const a = data.answers || {};
     dates.forEach(date => {
-      if (a[String(date)] === "〇") maruUsers[date].push(id);
+      if (a[date] === "〇") maruUsers[date].push(id);
     });
   });
 
@@ -261,7 +261,7 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
   const answers = {};
   answerInputs.forEach(input => {
     const date = input.name.replace("response-", "");
-    answers[String(date)] = input.value;
+    answers[date] = input.value;
   });
 
   const comment = document.getElementById("comment").value;
@@ -300,11 +300,11 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
 
   await Promise.all(logPromises);
   await setDoc(userRef, {
-    password:window.users[window.currentUser].password,
+    ...window.users[window.currentUser],
     answers,
     comment,
     updatedAt: serverTimestamp()
-  },{merge:true});
+  });
 
   await showAllResults();
   document.getElementById("submitMessage").textContent = "送信しました！";
