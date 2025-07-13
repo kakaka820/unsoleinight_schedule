@@ -69,7 +69,7 @@ async function loadPreviousAnswers() {
   dates.forEach(date => {
     const selected = answers[String(date)];
     if (selected) {
-      const el = document.querySelector(`input[name="response-${date}"][value="${selected}"]`);
+      const el = document.querySelector(`input[name="response-${String(date)}"][value="${selected}"]`);
       if (el) el.checked = true;
     }
   });
@@ -120,7 +120,7 @@ async function showAllResults() {
 
  
   dates.forEach(date => {
-    highlighted[date] = maruUsers[date].length >= MAX ? maruUsers[date].slice(0, MAX) : [];
+    highlighted[String(date)] = maruUsers[String(date)].length >= MAX ? maruUsers[String(date)].slice(0, MAX) : [];
   });
 
   if (Object.values(maruUsers).some(arr => arr.length >= MAX)) {
@@ -139,10 +139,11 @@ async function showAllResults() {
 
     dates.forEach(date => {
       const cell = document.createElement("td");
-      const answer = a[date] || "";
-      const isOverCapacity = maruUsers[date].length > MAX;
-const isReserve = isOverCapacity && maruUsers[date].includes(id) && !highlighted[date].includes(id);
-      if (highlighted[date]?.includes(id)) {cell.classList.add("highlight");}
+      const answer = a[String(date)] || "";
+      const key = String(date);
+      const isOverCapacity = maruUsers[key].length > MAX;
+const isReserve = isOverCapacity && maruUsers[key].includes(id) && !highlighted[key].includes(id);
+      if (highlighted[key]?.includes(id)) {cell.classList.add("highlight");}
      if (answer === "〇" && isReserve) {
     cell.textContent = "リザーバー";
   } else {
@@ -162,8 +163,8 @@ const formRows = document.querySelectorAll("#form-body tr");
 formRows.forEach(row => {
   const dateCell = row.cells[0];
   const date = dateCell.textContent;
-  if (highlighted[date]?.length > 0) {
-    console.log("ハイライト対象日付:", date, "ユーザー:", highlighted[date]);
+  if (highlighted[String(date)]?.length > 0) {
+    console.log("ハイライト対象日付:", date, "ユーザー:", highlighted[String(date)]);
     dateCell.classList.add("highlight");
   } else {
     dateCell.classList.remove("highlight");
@@ -274,8 +275,8 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
   const logPromises = [];
 
   dates.forEach(date => {
-    const oldVal = prevAnswers[date] || "";
-    const newVal = answers[date] || "";
+    const oldVal = prevAnswers[String(date)] || "";
+    const newVal = answers[String(date)] || "";
     if (oldVal !== newVal) {
       logPromises.push(addDoc(collection(db, "logs"), {
         userId: window.currentUser,
