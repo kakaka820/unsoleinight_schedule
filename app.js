@@ -303,7 +303,7 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
       ts: newVal === "〇" ? serverTimestamp() : null
     };
   } else {
-    answers[String(date)] = prevAnswers[String(date)];
+    answers[String(date)] = prevAnswers[String(date)] || { value: "", ts: null };
   }
 });
 
