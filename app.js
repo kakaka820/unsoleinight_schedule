@@ -129,7 +129,7 @@ dates.forEach(date => {
 
  
   dates.forEach(date => {
-    highlighted[String(date)] = maruUsers[String(date)].length >= MAX ? maruUsers[String(date)].slice(0, MAX) : [];
+    highlighted[String(date)] = maruUsers[String(date)].length >= MAX ? maruUsers[String(date)].slice(0, MAX).map(u => u.id): [];
   });
 
   if (Object.values(maruUsers).some(arr => arr.length >= MAX)) {
