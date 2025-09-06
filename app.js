@@ -151,11 +151,17 @@ dates.forEach(date => {
       const answer = a[String(date)]?.value || "";
       const key = String(date);
       const isOverCapacity = maruUsers[key].length > MAX;
-const isReserve = isOverCapacity && maruUsers[key].some(u => u.id === id) && !highlighted[key].includes(id);
+      const position = maruUsers[key].findIndex(u => u.id === id);
+      const circledNums = ["①","②","③","④","⑤","⑥","⑦","⑧","⑨","⑩","⑪","⑫","⑬","⑭"];
+　　　const displayRank = position >= 0 ? circledNums[position] : "";
+const isReserve = isOverCapacity &&position >= MAX && maruUsers[key].some(u => u.id === id) && !highlighted[key].includes(id);
       if (highlighted[key]?.includes(id)) {cell.classList.add("highlight");}
      if (answer === "〇" && isReserve) {
     cell.textContent = "リザーバー";
   } else {
+    cell.textContent = displayRank || "〇";
+  }
+      } else {
     cell.textContent = answer;
   }
       row.appendChild(cell);
