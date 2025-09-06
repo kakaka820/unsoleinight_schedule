@@ -67,11 +67,13 @@ async function loadPreviousAnswers() {
   const comment = userData.comment || "";
 
   dates.forEach(date => {
-    const selected = answers[String(date)];
-    if (selected) {
-      const el = document.querySelector(`input[name="response-${String(date)}"][value="${selected}"]`);
-      if (el) el.checked = true;
-    }
+    const selected = answers[String(date)]?.value;
+if (selected) {
+  const el = document.querySelector(
+    `input[name="response-${String(date)}"][value="${selected}"]`
+  );
+  if (el) el.checked = true;
+}
   });
   document.getElementById("comment").value = comment;
 }
@@ -113,9 +115,16 @@ async function showAllResults() {
   docsArray.forEach(({ id, data }) => {
     window.users[id] = data;
     const a = data.answers || {};
-    dates.forEach(date => {
-      if (a[String(date)] === "〇") maruUsers[date].push(id);
-    });
+   dates.forEach(date => {
+  if (a[String(date)]?.value === "〇") {
+    maruUsers[date].push({ id, ts: a[String(date)].ts });
+  }
+});
+dates.forEach(date => {
+  maruUsers[date].sort((x, y) => (x.ts?.toMillis?.() || 0) - (y.ts?.toMillis?.() || 0));
+  highlighted[date] = maruUsers[date].slice(0, MAX).map(u => u.id);
+});
+
   });
 
  
@@ -139,7 +148,7 @@ async function showAllResults() {
 
     dates.forEach(date => {
       const cell = document.createElement("td");
-      const answer = a[String(date)] || "";
+      const answer = a[String(date)]?.value || "";
       const key = String(date);
       const isOverCapacity = maruUsers[key].length > MAX;
 const isReserve = isOverCapacity && maruUsers[key].includes(id) && !highlighted[key].includes(id);
@@ -262,7 +271,8 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
   const answers = {};
   answerInputs.forEach(input => {
     const date = input.name.replace("response-", "");
-    answers[String(date)] = input.value;
+   answers[String(date)] = { value: input.value, ts: null };
+
   });
 
   const comment = document.getElementById("comment").value;
@@ -274,20 +284,29 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
   const dates = await fetchCandidateDates();
   const logPromises = [];
 
-  dates.forEach(date => {
-    const oldVal = prevAnswers[String(date)] || "";
-    const newVal = answers[String(date)] || "";
-    if (oldVal !== newVal) {
-      logPromises.push(addDoc(collection(db, "logs"), {
-        userId: window.currentUser,
-        uid: window.uid || "unknown",
-        date,
-        from: oldVal,
-        to: newVal,
-        timestamp: serverTimestamp()
-      }));
-    }
-  });
+ dates.forEach(date => {
+  const oldVal = prevAnswers[String(date)]?.value || "";
+  const newVal = answers[String(date)]?.value || "";
+
+  if (oldVal !== newVal) {
+    logPromises.push(addDoc(collection(db, "logs"), {
+      userId: window.currentUser,
+      uid: window.uid || "unknown",
+      date,
+      from: oldVal,
+      to: newVal,
+      timestamp: serverTimestamp()
+    }));
+
+    answers[String(date)] = {
+      value: newVal,
+      ts: newVal === "〇" ? serverTimestamp() : null
+    };
+  } else {
+    answers[String(date)] = prevAnswers[String(date)];
+  }
+});
+
   if (comment !== prevComment) {
     logPromises.push(addDoc(collection(db, "logs"), {
       userId: window.currentUser,
