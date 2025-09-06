@@ -152,7 +152,7 @@ dates.forEach(date => {
       const key = String(date);
       const isOverCapacity = maruUsers[key].length > MAX;
       const position = maruUsers[key].findIndex(u => u.id === id);
-      const circledNums = ["①","②","③","④","⑤","⑥","⑦","⑧","⑨","⑩","⑪","⑫","⑬","⑭"];
+　　　const circledNums = ["①","②","③","④","⑤","⑥","⑦","⑧","⑨","⑩","⑪","⑫","⑬","⑭"];
 　　　const displayRank = position >= 0 ? circledNums[position] : "";
 const isReserve = isOverCapacity &&position >= MAX && maruUsers[key].some(u => u.id === id) && !highlighted[key].includes(id);
       if (highlighted[key]?.includes(id)) {cell.classList.add("highlight");}
