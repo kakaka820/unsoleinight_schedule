@@ -299,7 +299,7 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
     }));
 
     answers[String(date)] = {
-      value: newVal,
+      value: newVal || "",
       ts: newVal === "〇" ? serverTimestamp() : null
     };
   } else {
