@@ -151,7 +151,7 @@ dates.forEach(date => {
       const answer = a[String(date)]?.value || "";
       const key = String(date);
       const isOverCapacity = maruUsers[key].length > MAX;
-const isReserve = isOverCapacity && maruUsers[key].includes(id) && !highlighted[key].includes(id);
+const isReserve = isOverCapacity && maruUsers[key].some(u => u.id === id) && !highlighted[key].includes(id);
       if (highlighted[key]?.includes(id)) {cell.classList.add("highlight");}
      if (answer === "〇" && isReserve) {
     cell.textContent = "リザーバー";
