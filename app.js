@@ -158,11 +158,14 @@ const isReserve = isOverCapacity &&position >= MAX && maruUsers[key].some(u => u
       if (highlighted[key]?.includes(id)) {cell.classList.add("highlight");}
      if (answer === "〇" && isReserve) {
     cell.textContent = "リザーバー";
-  } else {
+  } else if(answer === "〇") {
     cell.textContent = displayRank || "〇";
   }
       } else {
     cell.textContent = answer;
+  }
+    if (highlighted[key]?.includes(id)) {
+    cell.classList.add("highlight");
   }
       row.appendChild(cell);
     });
