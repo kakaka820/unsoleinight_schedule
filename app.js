@@ -74,6 +74,7 @@ if (selected) {
   );
   if (el) el.checked = true;
 }
+
   });
   document.getElementById("comment").value = comment;
 }
@@ -84,7 +85,7 @@ async function showAllResults() {
   headerRow.innerHTML = "";
 
   const thUser = document.createElement("th");
-  thUser.textContent = "ユーザーID";
+  thUser.textContent = "参加者名";
   headerRow.appendChild(thUser);
 
   dates.forEach(date => {
@@ -115,11 +116,30 @@ async function showAllResults() {
   docsArray.forEach(({ id, data }) => {
     window.users[id] = data;
     const a = data.answers || {};
-   dates.forEach(date => {
+
+
+
+
+
+    
+  console.log(`User ${id}'s answers:`, a);
+    const isAnswersEmpty = Object.keys(a).every(date => a[date]?.value === "");
+    if (isAnswersEmpty) {
+      console.log(`User ${id} has empty answers, skipping...`);
+      return;
+    }
+
+
+
+
+    
+    dates.forEach(date => {
   if (a[String(date)]?.value === "〇") {
     maruUsers[date].push({ id, ts: a[String(date)].ts });
   }
 });
+
+
 dates.forEach(date => {
   maruUsers[date].sort((x, y) => (x.ts?.toMillis?.() || 0) - (y.ts?.toMillis?.() || 0));
   highlighted[date] = maruUsers[date].slice(0, MAX).map(u => u.id);
@@ -129,11 +149,15 @@ dates.forEach(date => {
 
  
   dates.forEach(date => {
-    highlighted[String(date)] = maruUsers[String(date)].length >= MAX ? maruUsers[String(date)].slice(0, MAX).map(u => u.id): [];
-  });
+  highlighted[String(date)] =
+    maruUsers[String(date)].length >= MAX
+      ? maruUsers[String(date)].slice(0, MAX).map(u => u.id)
+      : [];
+});
+
 
   if (Object.values(maruUsers).some(arr => arr.length >= MAX)) {
-    if (status) status.textContent = "満席となった会に関しましてはリザーバー枠での参加を募集いたします。";
+    if (status) status.textContent = "満席となった会に関しましてはリザーバー枠での参加を募集いたします。リザーバー希望の方は〇にチェックの上送信お願いします。";
   }
 
   docsArray.forEach(({ id, data }) => {
@@ -176,20 +200,18 @@ dates.forEach(date => {
     tbody.appendChild(row);
   });
 
-// フォームの日付セルもハイライト
 const formRows = document.querySelectorAll("#form-body tr");
 formRows.forEach(row => {
   const dateCell = row.cells[0];
   const date = dateCell.textContent;
-  if (highlighted[String(date)]?.length > 0) {
-    console.log("ハイライト対象日付:", date, "ユーザー:", highlighted[String(date)]);
+  if (highlighted[date]?.length > 0) {
+    console.log("ハイライト対象日付:", date, "ユーザー:", highlighted[date]);
     dateCell.classList.add("highlight");
   } else {
     dateCell.classList.remove("highlight");
   }
 });
 
-  
 }
 
 window.login = async function () {
@@ -211,14 +233,13 @@ window.login = async function () {
       document.getElementById("formSection").classList.remove("hidden");
       document.getElementById("resultSection").classList.remove("hidden");
       document.getElementById("welcomeMsg").textContent = `${id} さんとしてログイン中`;
-// 匿名認証でログインして uid を取得し、users/{id} に保存
 try {
   const userCredential = await signInAnonymously(auth);
   const uid = userCredential.user.uid;
   window.uid = uid;
   console.log("UID取得成功", uid);
   const userRef = doc(db, "users", id);
-  await setDoc(userRef, { uid }, { merge: true });  // uidだけを追記保存
+  await setDoc(userRef, { uid }, { merge: true }); 
   console.log("UID保存成功:", uid);
 } catch (error) {
   console.error("UID保存失敗:", error);
@@ -233,7 +254,7 @@ try {
       document.getElementById("loginError").textContent = "パスワードが違います。";
     }
   } else {
-    document.getElementById("loginError").textContent = "IDが存在しません。";
+    document.getElementById("loginError").textContent = "アカウントが存在しません。";
   }
 };
 
@@ -241,16 +262,16 @@ window.register = async function () {
   const id = document.getElementById("newUserId").value.trim();
   const pass = document.getElementById("newPassword").value;
   if (!id || !pass) {
-    document.getElementById("registerMessage").textContent = "IDとパスワードを入力してください。";
+    document.getElementById("registerMessage").textContent = "名前とパスワードを入力してください。";
     return;
   }
   if (/[<>]/.test(id)) {
-    document.getElementById("registerMessage").textContent = "IDに < や > を含めないでください。";
+    document.getElementById("registerMessage").textContent = "名前に < や > を含めないでください。";
     return;
   }
   const docSnap = await getDoc(doc(db, "users", id));
   if (docSnap.exists()) {
-    document.getElementById("registerMessage").textContent = "このIDはすでに使われています。";
+    document.getElementById("registerMessage").textContent = "この名前はすでに使われています。";
   } else {
     const hashedPass = await sha256(pass);
     await setDoc(doc(db, "users", id), {
@@ -280,7 +301,7 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
   const answers = {};
   answerInputs.forEach(input => {
     const date = input.name.replace("response-", "");
-   answers[String(date)] = { value: input.value, ts: null };
+    answers[String(date)] = { value: input.value, ts: null };
 
   });
 
@@ -293,7 +314,7 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
   const dates = await fetchCandidateDates();
   const logPromises = [];
 
- dates.forEach(date => {
+dates.forEach(date => {
   const oldVal = prevAnswers[String(date)]?.value || "";
   const newVal = answers[String(date)]?.value || "";
 
@@ -306,7 +327,6 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
       to: newVal,
       timestamp: serverTimestamp()
     }));
-
     answers[String(date)] = {
       value: newVal || "",
       ts: newVal === "〇" ? serverTimestamp() : null
@@ -315,7 +335,6 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
     answers[String(date)] = prevAnswers[String(date)] || { value: "", ts: null };
   }
 });
-
   if (comment !== prevComment) {
     logPromises.push(addDoc(collection(db, "logs"), {
       userId: window.currentUser,
@@ -338,18 +357,12 @@ document.getElementById("scheduleForm").addEventListener("submit", async (e) => 
   await showAllResults();
   document.getElementById("submitMessage").textContent = "送信しました！";
 });
-// すでに他のスクリプトがある部分
 
-// エンターキーのイベントリスナー
 document.addEventListener('keydown', function(event) {
   if (event.key === 'Enter') {
-    // フォーカスされているボタンを取得
     const focusedButton = document.activeElement;
-
-   // ボタンがフォーカスされているか確認し、特定のボタンにのみ反応
     if (focusedButton && focusedButton.tagName === 'BUTTON') {
       {
-        // 該当のボタンをクリック
         focusedButton.click();
       }
     }
